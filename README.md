@@ -1,6 +1,6 @@
 # Pika PKI
 
-Pika PKI is a PKI management Text User Interface.  It's built using [gem](https://github.com/charmbracelet/gum?tab=readme-ov-file), which is a dependency.
+Pika PKI is a PKI management Text User Interface.  It's built using [gum](https://github.com/charmbracelet/gum?tab=readme-ov-file), which is a dependency.
 
 ## Dependencies
 

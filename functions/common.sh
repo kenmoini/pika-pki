@@ -157,7 +157,9 @@ function certificateSelectionScreen {
   local CA_TYPE=$(getCAType ${CA_PATH})
   local CERT_OPTIONS='../ Back\n[+] Create a new Certificate'
   local CERTIFICATES=$(find ${CA_PATH}/certs/ -maxdepth 1 -type f -printf '%p\n' | grep -ve "^${CA_PATH}/certs/ca.cert.pem$" | sed '/^$/d' | sed 's|'${CA_PATH}'/certs/||g' | sed 's|.cert.pem||g')
-  CERT_OPTIONS="${CERT_OPTIONS}\n${CERTIFICATES}"
+  if [ ! -z "${CERTIFICATES}" ]; then
+    CERT_OPTIONS=''${CERT_OPTIONS}'\n'${CERTIFICATES}''
+  fi
 
   clear
   echoBanner "[${CA_TYPE}] $(getBannerPath "${CA_PATH}") - Certificate Selection"
@@ -254,9 +256,27 @@ function viewCertificate {
 
 function deleteCertificate {
   local CERT_PATH=${1}
+  local CSR_PATH=$(echo ${CERT_PATH} | sed 's|.cert.pem|.csr.pem|g' | sed 's|certs/|csr/|g')
+  local KEY_PATH=$(echo ${CERT_PATH} | sed 's|.cert.pem|.key.pem|g' | sed 's|certs/|private/|g')
   local CERT_CN=$(getCertificateCommonName ${CERT_PATH})
+  local CERT_SERIAL=$(openssl x509 -noout -serial -in ${CERT_PATH} | cut -d'=' -f2)
+  local CERT_SERIAL_CERT_PATH=$(echo ${CERT_PATH} | sed 's|.cert.pem|.pem|g' | sed 's|/certs/|/newcerts/|g')
   local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
 
-  echo -e "\n====== DANGER ZONE ======\n====== DANGER ZONE ======\n====== DANGER ZONE ======"
+  clear
+  echoBanner "[Certificate] $(basename $CERT_PATH | sed 's|.cert.pem||g')"
+  echo "===== Path: $(getPKIPath ${CERT_CA_PATH})"
+
+  echo -e "\n====== DANGER ZONE ======\n====== DANGER ZONE ======\n====== DANGER ZONE ======\n"
   echo "Are you sure you want to delete the certificate?"
+
+  if gum confirm; then
+    sed -i '/[[:blank:]]'${CERT_SERIAL}'[[:blank:]]/d' ${CERT_CA_PATH}/index.txt
+    rm -f ${CERT_PATH} ${CSR_PATH} ${KEY_PATH} ${CERT_SERIAL_CERT_PATH}
+    echo "Certificate deleted: ${CERT_CN}"
+    certificateSelectionScreen ${CERT_CA_PATH}
+  else
+    echo "Certificate deletion cancelled."
+    selectCertificate ${CERT_PATH}
+  fi
 }

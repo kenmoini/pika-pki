@@ -32,3 +32,9 @@ To override some default behavior you can override some parameters via Environme
 | PIKA_PKI_DEFAULT_LOCALITY | `""` | Will provide a default answer for the questions asking for a Locaity  |
 | PIKA_PKI_DEFAULT_EMAIL | `""` | Will provide a default answer for the questions asking for an email address |
 | PIKA_PKI_CERT_KEY_ENCRYPTION | `"false"` | By default non-CA leaf certificates do not encrypt their private keys - set to `true` to password encrypt certificate keys |
+
+## TODO
+
+- Revoking a Certificate
+- Saving a Certificate to a path
+- CRL Distribution

@@ -195,6 +195,7 @@ function createServerCertificate {
     else
       echo "- Certificate already exists: ${SERVER_CERT_PATH}"
     fi
+    selectCertificate ${SERVER_CERT_PATH}
   else
     selectCAActions "${PARENT_CA_PATH}"
   fi

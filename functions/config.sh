@@ -54,6 +54,7 @@ policy            = policy_${2}
 # See the POLICY FORMAT section of 'man ca'.
 countryName             = supplied
 stateOrProvinceName     = supplied
+localityName            = supplied
 organizationName        = match
 organizationalUnitName  = optional
 commonName              = supplied
@@ -64,6 +65,7 @@ emailAddress            = supplied
 # See the POLICY FORMAT section of 'man ca'.
 countryName             = supplied
 stateOrProvinceName     = supplied
+localityName            = supplied
 organizationName        = supplied
 organizationalUnitName  = optional
 commonName              = supplied
@@ -72,13 +74,13 @@ emailAddress            = supplied
 [ policy_signing ]
 # Allow the signing CAs to sign a more diverse range of certificates.
 # See the POLICY FORMAT section of 'man ca'.
-countryName             = optional
-stateOrProvinceName     = optional
-localityName            = optional
-organizationName        = optional
+countryName             = supplied
+stateOrProvinceName     = supplied
+localityName            = supplied
+organizationName        = supplied
 organizationalUnitName  = optional
 commonName              = supplied
-emailAddress            = optional
+emailAddress            = supplied
 
 [ req ]
 # Options for the 'req' tool ('man req').

@@ -108,9 +108,6 @@ function selectIntermediateCA {
     exit 1
   fi
 
-  INT_CA_CN=$(echo -e ${INT_CA_GLUE_STR} | grep -e "|${INT_CA_CHOICE}\$" | cut -d"|" -f2)
-  INT_CA_DIR=$(echo -e ${INT_CA_GLUE_STR} | grep -e "|${INT_CA_CHOICE}\$" | cut -d"|" -f1)
-
   case "${INT_CA_CHOICE}" in
     ("../ Back")
       selectCAActions ${CA_PATH}
@@ -120,6 +117,9 @@ function selectIntermediateCA {
       createNewIntermediateCA ${CA_PATH}
       ;;
     (*)
+      INT_CA_CN=$(echo -e ${INT_CA_GLUE_STR} | grep -e "|${INT_CA_CHOICE}\$" | cut -d"|" -f2)
+      INT_CA_DIR=$(echo -e ${INT_CA_GLUE_STR} | grep -e "|${INT_CA_CHOICE}\$" | cut -d"|" -f1)
+
       selectCAActions ${INT_CA_DIR}
       ;;
   esac

@@ -13,7 +13,7 @@ function promptNewRootCAName {
 }
 
 function promptNewRootCACountryCode {
-  local ROOT_CA_COUNTRY_CODE=$(gum input --prompt "* Country Code: " --placeholder "US")
+  local ROOT_CA_COUNTRY_CODE=$(gum input --prompt "* Country Code: " --placeholder "US" --value "${PIKA_PKI_DEFAULT_COUNTRY}")
   if [ -z "$ROOT_CA_COUNTRY_CODE" ]; then
     promptNewRootCACountryCode
   else
@@ -22,7 +22,7 @@ function promptNewRootCACountryCode {
 }
 
 function promptNewRootCAState {
-  local ROOT_CA_STATE=$(gum input --prompt "* State: " --placeholder "California")
+  local ROOT_CA_STATE=$(gum input --prompt "* State: " --placeholder "California" --value "${PIKA_PKI_DEFAULT_STATE}")
   if [ -z "$ROOT_CA_STATE" ]; then
     promptNewRootCAState
   else
@@ -31,7 +31,7 @@ function promptNewRootCAState {
 }
 
 function promptNewRootCALocality {
-  local ROOT_CA_LOCALITY=$(gum input --prompt "* City/Locality: " --placeholder "San Francisco")
+  local ROOT_CA_LOCALITY=$(gum input --prompt "* City/Locality: " --placeholder "San Francisco" --value "${PIKA_PKI_DEFAULT_LOCALITY}")
   if [ -z "$ROOT_CA_LOCALITY" ]; then
     promptNewRootCALocality
   else
@@ -40,7 +40,7 @@ function promptNewRootCALocality {
 }
 
 function promptNewRootCAOrganization {
-  local ROOT_CA_ORGANIZATION=$(gum input --prompt "* Organization: " --placeholder "ACME Corporation")
+  local ROOT_CA_ORGANIZATION=$(gum input --prompt "* Organization: " --placeholder "ACME Corporation" --value "${PIKA_PKI_DEFAULT_ORG}")
   if [ -z "$ROOT_CA_ORGANIZATION" ]; then
     promptNewRootCAOrganization
   else
@@ -49,7 +49,7 @@ function promptNewRootCAOrganization {
 }
 
 function promptNewRootCAOrganizationalUnit {
-  local ROOT_CA_ORGANIZATIONAL_UNIT=$(gum input --prompt "* Organizational Unit: " --placeholder "InfoSec")
+  local ROOT_CA_ORGANIZATIONAL_UNIT=$(gum input --prompt "* Organizational Unit: " --placeholder "InfoSec" --value "${PIKA_PKI_DEFAULT_OU}")
   if [ -z "$ROOT_CA_ORGANIZATIONAL_UNIT" ]; then
     promptNewRootCAOrganizationalUnit
   else
@@ -58,7 +58,7 @@ function promptNewRootCAOrganizationalUnit {
 }
 
 function promptNewRootCAEmail {
-  local ROOT_CA_EMAIL=$(gum input --prompt "* Email: " --placeholder "you@acme.com")
+  local ROOT_CA_EMAIL=$(gum input --prompt "* Email: " --placeholder "you@acme.com" --value "${PIKA_PKI_DEFAULT_EMAIL}")
   if [ -z "$ROOT_CA_EMAIL" ]; then
     promptNewRootCAEmail
   else
@@ -71,7 +71,56 @@ function promptNewRootCACRLURL {
   echo ${ROOT_CA_CRL_DIST_URI}
 }
 
+
+function selectRootCA {
+  local ROOT_CA_DIRS=$(find ${PIKA_PKI_DIR}/roots/ -maxdepth 1 -type d -printf '%p\n' | grep -ve "^${PIKA_PKI_DIR}/roots/$")
+
+  local ROOT_CA_CERT=""
+  local ROOT_CA_COMMON_NAME=""
+  local ROOT_CA_GLUE=()
+  local ROOT_CA_GLUE_STR=''
+  local ROOT_CA_COMMON_NAMES_STR="[+] Create a new Root CA"
+  local ROOT_CA_COMMON_NAMES=()
+
+  while IFS= read -r line; do
+    if [ -z "$line" ]; then
+      continue
+    fi
+    ROOT_CA_CERT="${line}/certs/ca.cert.pem"
+    ROOT_CA_COMMON_NAME="$(getCertificateCommonName ${ROOT_CA_CERT})"
+    ROOT_CA_GLUE+=("${line}|${ROOT_CA_COMMON_NAME}")
+    ROOT_CA_GLUE_STR="${ROOT_CA_GLUE_STR}${line}|${ROOT_CA_COMMON_NAME}\n"
+    ROOT_CA_COMMON_NAMES+=("${ROOT_CA_COMMON_NAME}")
+    ROOT_CA_COMMON_NAMES_STR+="\n$ROOT_CA_COMMON_NAME"
+  done <<< "$ROOT_CA_DIRS"
+
+  clear
+  echoBanner "Root CA Selection"
+
+  local ROOT_CA_CHOICE=$(echo -e $ROOT_CA_COMMON_NAMES_STR | gum choose)
+  if [ -z "$ROOT_CA_CHOICE" ]; then
+    echo "No Root CA selected.  Exiting..."
+    exit 1
+  fi
+
+  case "${ROOT_CA_CHOICE}" in
+    ("[+] Create a new Root CA")
+      createNewRootCA
+      ;;
+    (*)
+      local ROOT_CA_CN=$(echo -e ${ROOT_CA_GLUE_STR} | grep -e "|${ROOT_CA_CHOICE}\$" | cut -d"|" -f2)
+      local ROOT_CA_DIR=$(echo -e ${ROOT_CA_GLUE_STR} | grep -e "|${ROOT_CA_CHOICE}\$" | cut -d"|" -f1)
+      selectCAActions "${ROOT_CA_DIR}"
+      ;;
+  esac
+
+}
+
 function createNewRootCA {
+  
+  clear
+  echoBanner "Create new Root Certificate Authority (CA)"
+
   local ROOT_CA_NAME=$(promptNewRootCAName)
   local ROOT_CA_COUNTRY_CODE=$(promptNewRootCACountryCode)
   local ROOT_CA_STATE=$(promptNewRootCAState)
@@ -103,17 +152,7 @@ function createNewRootCA {
 
     echo -e "- Creating default OpenSSL configuration files..."
     generateOpenSSLConfFile "${ROOT_CA_DIR}" "root" "${ROOT_CA_COUNTRY_CODE}" "${ROOT_CA_STATE}" "${ROOT_CA_LOCALITY}" "${ROOT_CA_ORGANIZATION}" "${ROOT_CA_ORGANIZATIONAL_UNIT}" "${ROOT_CA_EMAIL}" 3650 "${ROOT_CA_CRL_DIST_URI}"
-    
-    #if [ ! -f ${ROOT_CA_DIR/private/ca.key.pem} ]; then
-    #  echo "- No private key found, creating now..."
-    #  ROOT_CA_PASS=$(gum input --password --prompt "Enter a password for the Root CA private key: ")
-    #  PW_FILE=$(mktemp)
-    #  echo ${ROOT_CA_PASS} > ${PW_FILE}
-    #  generatePrivateKey "${ROOT_CA_DIR}/private/ca.key.pem" "${ROOT_CA_PASS}"
-    #  rm -f ${PW_FILE}
-    #else
-    #  echo "- Private key already exists: ${ROOT_CA_DIR}/private/ca.key.pem"
-    #fi
+
     generatePrivateKey "${ROOT_CA_DIR}/private/ca.key.pem" "Root CA"
 
     if [ ! -f ${ROOT_CA_DIR}/certs/ca.cert.pem ]; then
@@ -143,16 +182,7 @@ function createNewRootCA {
       fi
     fi
 
-    ROOT_CA_CHOICE="${ROOT_CA_NAME}"
-
-  else
-    echo "- Aborting..."
-    exit 1
-    #if [ ! -z "${ROOT_CA_CRL_DIST_URI}" ]; then
-    #  nclr 10
-    #else
-    #  nclr 9
-    #fi
   fi
+  selectRootCA
 
 }

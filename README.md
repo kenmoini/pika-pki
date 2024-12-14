@@ -41,7 +41,6 @@ To override some default behavior you can override some parameters via Environme
 
 ## TODO
 
-- Revoking a Certificate
 - Saving a Certificate to a path
 - CRL Rotation
 - CRL Distribution

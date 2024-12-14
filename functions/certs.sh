@@ -195,9 +195,123 @@ function createServerCertificate {
     else
       echo "- Certificate already exists: ${SERVER_CERT_PATH}"
     fi
-    selectCertificate ${SERVER_CERT_PATH}
+    selectCertificateActions ${SERVER_CERT_PATH}
   else
     selectCAActions "${PARENT_CA_PATH}"
   fi
 
+}
+
+# selectCertificateActions will display the options for a certificate
+# {1} CERT_PATH: The path to the certificate to select
+# {2} HEADER_OFF: Whether to display the header or not, defaults to "false"
+function selectCertificateActions {
+  local CERT_PATH=${1}
+  local HEADER_OFF=${2:-"false"}
+  local CERT_CN=$(getCertificateCommonName ${CERT_PATH})
+  local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
+  local CERT_CA_CERT_PATH="${CERT_CA_PATH}/certs/ca.cert.pem"
+
+  if [ "${HEADER_OFF}" == "false" ]; then
+    clear
+    echoBanner "[Certificate] $(basename $CERT_PATH | sed 's|.cert.pem||g')"
+    echo "===== Path: $(getPKIPath ${CERT_CA_PATH})"
+  fi
+
+  local CERT_OPTIONS='../ Back\n[+] Save Certificate\n[+] View Certificate'
+
+  # Check to see if the CA has a CRL
+  CA_CRL_CHECK=$(openssl x509 -text -in ${CERT_CA_CERT_PATH} |grep -A4 'CRL Distribution Points' | tail -n1 | sed 's/URI://g' | sed 's/ //g')
+  if [ ! -z "${CA_CRL_CHECK}" ]; then
+    CERT_OPTIONS=''${CERT_OPTIONS}'\n[+] Revoke Certificate'
+  else
+    CERT_OPTIONS=''${CERT_OPTIONS}'\n[+] Delete Certificate (CRL not available)'
+  fi
+
+  local SELECTED_ACTION=$(echo -e $CERT_OPTIONS | gum choose)
+  if [ -z "$SELECTED_ACTION" ]; then
+    echo "No action selected, exiting..."
+    exit 1
+  fi
+
+  case "$SELECTED_ACTION" in
+    "../ Back")
+      certificateSelectionScreen ${CERT_CA_PATH}
+      ;;
+    "[+] Save Certificate")
+      saveCertificate ${CERT_PATH}
+      ;;
+    "[+] View Certificate")
+      viewCertificate ${CERT_PATH}
+      ;;
+    "[+] Delete Certificate"*)
+      deleteCertificate ${CERT_PATH}
+      ;;
+    "[+] Revoke Certificate"*)
+      revokeCertificate ${CERT_PATH}
+      ;;
+    *)
+      echo "Invalid selection, exiting"
+      exit 1
+      ;;
+  esac
+}
+
+# viewCertificate will display the details of a certificate
+# {1} CERT_PATH: The path to the certificate to view
+function viewCertificate {
+  local CERT_PATH=${1}
+  local CERT_CN=$(getCertificateCommonName ${CERT_PATH})
+  local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
+
+  clear
+  echoBanner "[Certificate] $(basename $CERT_PATH | sed 's|.cert.pem||g')"
+  echo "===== Path: $(getPKIPath ${CERT_CA_PATH})"
+
+  local CERT_ORG=$(openssl x509 -noout -subject -in ${CERT_PATH} -nameopt multiline | awk -F' = ' '/organizationName/ {print $2}')
+  local CERT_ORG_UNIT=$(openssl x509 -noout -subject -in ${CERT_PATH} -nameopt multiline | awk -F' = ' '/organizationalUnitName/ {print $2}')
+  local CERT_START_DATE=$(openssl x509 -noout -startdate -in ${CERT_PATH} | cut -d'=' -f2)
+  local CERT_END_DATE=$(openssl x509 -noout -enddate -in ${CERT_PATH} | cut -d'=' -f2)
+  local CERT_FINGERPRINT=$(openssl x509 -noout -fingerprint -in ${CERT_PATH} | cut -d'=' -f2)
+  local CERT_SERIAL=$(openssl x509 -noout -serial -in ${CERT_PATH} | cut -d'=' -f2)
+  local CERT_LOCATION="$(openssl x509 -noout -subject -in ${CERT_PATH} -nameopt multiline | awk -F' = ' '/localityName/ {print $2}')$(openssl x509 -noout -subject -in ${CERT_PATH} -nameopt multiline | awk -F' = ' '/stateOrProvinceName/ {print $2}'), $(openssl x509 -noout -subject -in ${CERT_PATH} -nameopt multiline | awk -F' = ' '/countryName/ {print $2}')"
+
+  echo "- Common Name: ${CERT_CN}"
+  echo "- Organization, Unit: ${CERT_ORG}, ${CERT_ORG_UNIT}"
+  echo "- Location: ${CERT_LOCATION}"
+  echo "- Validity: ${CERT_START_DATE} - ${CERT_END_DATE}"
+  echo "- Fingerprint: ${CERT_FINGERPRINT}"
+  echo "- Serial: ${CERT_SERIAL}"
+  echo -e "- $(openssl x509 -noout -ext subjectAltName -in ${CERT_PATH} | sed 's/,/\n   /g')"
+  echo ""
+  selectCertificateActions ${CERT_PATH} "true"
+}
+
+# deleteCertificate will delete a certificate and its associated files
+# {1} CERT_PATH: The path to the certificate to delete
+function deleteCertificate {
+  local CERT_PATH=${1}
+  local CSR_PATH=$(echo ${CERT_PATH} | sed 's|.cert.pem|.csr.pem|g' | sed 's|certs/|csr/|g')
+  local KEY_PATH=$(echo ${CERT_PATH} | sed 's|.cert.pem|.key.pem|g' | sed 's|certs/|private/|g')
+  local CERT_CN=$(getCertificateCommonName ${CERT_PATH})
+  local CERT_SERIAL=$(openssl x509 -noout -serial -in ${CERT_PATH} | cut -d'=' -f2)
+  local CERT_SERIAL_CERT_PATH=$(echo ${CERT_PATH} | sed 's|.cert.pem|.pem|g' | sed 's|/certs/|/newcerts/|g')
+  local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
+
+  clear
+  echoBanner "[Certificate] $(basename $CERT_PATH | sed 's|.cert.pem||g')"
+  echo "===== Path: $(getPKIPath ${CERT_CA_PATH})"
+
+  echo -e "\n====== DANGER ZONE ======\n====== DANGER ZONE ======\n====== DANGER ZONE ======\n"
+  echo "Are you sure you want to delete the certificate?"
+
+  if gum confirm; then
+    sed -i '/[[:blank:]]'${CERT_SERIAL}'[[:blank:]]/d' ${CERT_CA_PATH}/index.txt
+    rm -f ${CERT_PATH} ${CSR_PATH} ${KEY_PATH} ${CERT_SERIAL_CERT_PATH}
+    echo "Certificate deleted: ${CERT_CN}"
+    certificateSelectionScreen ${CERT_CA_PATH}
+  else
+    echo "Certificate deletion cancelled."
+    selectCertificateActions ${CERT_PATH}
+  fi
 }

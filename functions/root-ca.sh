@@ -67,7 +67,7 @@ function promptNewRootCAEmail {
 }
 
 function promptNewRootCACRLURL {
-  local ROOT_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI: " --placeholder "https://acme.com/pki/crl")
+  local ROOT_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI Root: " --placeholder "https://acme.com/pki/crl")
   echo ${ROOT_CA_CRL_DIST_URI}
 }
 
@@ -151,7 +151,7 @@ function createNewRootCA {
     createCommonCAAssets "${ROOT_CA_DIR}" "Root"
 
     echo -e "- Creating default OpenSSL configuration files..."
-    generateOpenSSLConfFile "${ROOT_CA_DIR}" "root" "${ROOT_CA_COUNTRY_CODE}" "${ROOT_CA_STATE}" "${ROOT_CA_LOCALITY}" "${ROOT_CA_ORGANIZATION}" "${ROOT_CA_ORGANIZATIONAL_UNIT}" "${ROOT_CA_EMAIL}" 3650 "${ROOT_CA_CRL_DIST_URI}"
+    generateOpenSSLConfFile "${ROOT_CA_DIR}" "${ROOT_CA_NAME}" "${ROOT_CA_SLUG}" "root" "${ROOT_CA_COUNTRY_CODE}" "${ROOT_CA_STATE}" "${ROOT_CA_LOCALITY}" "${ROOT_CA_ORGANIZATION}" "${ROOT_CA_ORGANIZATIONAL_UNIT}" "${ROOT_CA_EMAIL}" 3650 "${ROOT_CA_CRL_DIST_URI}"
 
     generatePrivateKey "${ROOT_CA_DIR}/private/ca.key.pem" "Root CA"
 

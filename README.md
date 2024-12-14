@@ -1,6 +1,12 @@
 # Pika PKI
 
-Pika PKI is a PKI management Text User Interface.  It's built using [gum](https://github.com/charmbracelet/gum?tab=readme-ov-file), which is a dependency.
+Pika PKI is a PKI management Text User Interface (TUI).  It's built using [gum](https://github.com/charmbracelet/gum?tab=readme-ov-file), which is a dependency.
+
+- Create multiple Root Certificate Authorities
+- Define your PKI Chain however you want with Intermediate CAs and Signing CAs
+- Sign certificates anywhere along the chain
+- Built on standard OpenSSL commands and configurations
+- Easily create certificates bundles for HAProxy, OpenShift, and more
 
 ## Dependencies
 
@@ -16,7 +22,7 @@ Pika PKI is a PKI management Text User Interface.  It's built using [gum](https:
 3. Enter the directory `cd pika-pki`
 4. Run `./pika-pki`
 5. ???????
-6. *PROFIT!!!!!!1*
+6. ***PROFIT!!!!!!1***
 
 ## Optional Parameters
 
@@ -37,4 +43,6 @@ To override some default behavior you can override some parameters via Environme
 
 - Revoking a Certificate
 - Saving a Certificate to a path
+- CRL Rotation
 - CRL Distribution
+- GitHub Actions for container builds

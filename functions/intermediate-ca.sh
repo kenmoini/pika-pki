@@ -69,7 +69,7 @@ function promptNewIntermediateCAEmail {
 }
 
 function promptNewIntermediateCACRLURL {
-  local INTERMEDIATE_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI: " --placeholder "https://acme.com/pki/crl")
+  local INTERMEDIATE_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI Root: " --placeholder "https://acme.com/pki/crl")
   echo ${INTERMEDIATE_CA_CRL_DIST_URI}
 }
 
@@ -159,7 +159,7 @@ function createNewIntermediateCA {
     createCommonCAAssets "${INTERMEDIATE_CA_DIR}" "Intermediate"
 
     echo -e "- Creating default OpenSSL configuration files..."
-    generateOpenSSLConfFile "${INTERMEDIATE_CA_DIR}" "intermediate" "${INTERMEDIATE_CA_COUNTRY_CODE}" "${INTERMEDIATE_CA_STATE}" "${INTERMEDIATE_CA_LOCALITY}" "${INTERMEDIATE_CA_ORGANIZATION}" "${INTERMEDIATE_CA_ORGANIZATIONAL_UNIT}" "${INTERMEDIATE_CA_EMAIL}" 3650 "${INTERMEDIATE_CA_CRL_DIST_URI}"
+    generateOpenSSLConfFile "${INTERMEDIATE_CA_DIR}" "${INTERMEDIATE_CA_NAME}" "${INTERMEDIATE_CA_SLUG}" "intermediate" "${INTERMEDIATE_CA_COUNTRY_CODE}" "${INTERMEDIATE_CA_STATE}" "${INTERMEDIATE_CA_LOCALITY}" "${INTERMEDIATE_CA_ORGANIZATION}" "${INTERMEDIATE_CA_ORGANIZATIONAL_UNIT}" "${INTERMEDIATE_CA_EMAIL}" 3650 "${INTERMEDIATE_CA_CRL_DIST_URI}"
 
     generatePrivateKey "${INTERMEDIATE_CA_DIR}/private/ca.key.pem" "Intermediate CA"
 

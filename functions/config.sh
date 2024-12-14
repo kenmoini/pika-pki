@@ -1,11 +1,24 @@
 #!/bin/bash
 
-#generateOpenSSLConfFile "$ROOT_CA_PATH" root "$ROOT_CA_COUNTRY_CODE" "$ROOT_CA_STATE" "$ROOT_CA_CITY" "$ROOT_CA_ORG" "$ROOT_CA_ORG_UNIT" "$ROOT_CA_EMAIL" $ROOT_CA_DAYS_VALID $ROOT_CA_CRL_DIST_URI
+#generateOpenSSLConfFile "$CA_PATH" "$CA_CN" "$CA_SLUG" root "$CA_COUNTRY_CODE" "$CA_STATE" "$CA_CITY" "$CA_ORG" "$CA_ORG_UNIT" "$CA_EMAIL" $CA_DAYS_VALID $CA_CRL_DIST_URI
 function generateOpenSSLConfFile {
-  if [ ! -f ${1}/openssl.cnf ]; then
-    cat << EOF > ${1}/openssl.cnf
-# OpenSSL ${2} CA configuration file.
-# Copy to ${1}/openssl.cnf.
+  local CA_PATH=${1}
+  local CA_CN=${2}
+  local CA_SLUG=${3}
+  local CA_TYPE=${4}
+  local CA_COUNTRY_CODE=${5}
+  local CA_STATE=${6}
+  local CA_LOCALITY=${7}
+  local CA_ORG=${8}
+  local CA_ORG_UNIT=${9}
+  local CA_EMAIL=${10}
+  local CA_DAYS_VALID=${11}
+  local CA_CRL_DIST_URI=${12}
+
+  if [ ! -f ${CA_PATH}/openssl.cnf ]; then
+    cat << EOF > ${CA_PATH}/openssl.cnf
+# OpenSSL "${CA_CN}" ${CA_TYPE} CA configuration file.
+# Copy to ${CA_PATH}/openssl.cnf.
 
 [ ca ]
 # 'man ca'
@@ -13,7 +26,7 @@ default_ca        = CA_default
 
 [ CA_default ]
 # Directory and file locations.
-dir               = ${1}
+dir               = ${CA_PATH}
 certs             = \$dir/certs
 new_certs_dir     = \$dir/newcerts
 database          = \$dir/index.txt
@@ -24,33 +37,34 @@ RANDFILE          = \$dir/private/.rand
 private_key       = \$dir/private/ca.key.pem
 certificate       = \$dir/certs/ca.cert.pem
 
+# SHA-1 is deprecated, so use SHA-2 instead.
+default_md        = sha256
+
+name_opt          = ca_default
+cert_opt          = ca_default
+default_days      = ${CA_DAYS_VALID}
+preserve          = no
+copy_extensions   = copy
+policy            = policy_${CA_TYPE}
+
 EOF
 
-    if [ ! -z "${10}" ]; then
-      cat << EOF >> ${1}/openssl.cnf
+    if [ ! -z "${CA_CRL_DIST_URI}" ]; then
+      cat << EOF >> ${CA_PATH}/openssl.cnf
 # For certificate revocation lists.
 crl_dir           = \$dir/crl
 crlnumber         = \$dir/crlnumber
-crl               = \$dir/crl/${2}.crl.pem
+crl               = \$dir/crl/ca.crl.pem
 crl_extensions    = crl_ext
 default_crl_days  = 30
 
 EOF
     fi
 
-    cat << EOF >> ${1}/openssl.cnf
-# SHA-1 is deprecated, so use SHA-2 instead.
-default_md        = sha256
-
-name_opt          = ca_default
-cert_opt          = ca_default
-default_days      = ${9}
-preserve          = no
-copy_extensions   = copy
-policy            = policy_${2}
+    cat << EOF >> ${CA_PATH}/openssl.cnf
 
 [ policy_root ]
-# The root CA should only sign intermediate certificates that match.
+# The root CA should only sign intermediate certificates that match the same Organization.
 # See the POLICY FORMAT section of 'man ca'.
 countryName             = supplied
 stateOrProvinceName     = supplied
@@ -92,7 +106,7 @@ string_mask         = utf8only
 default_md          = sha256
 
 # Extension to add when the -x509 option is used.
-x509_extensions     = v3_${2}_ca
+x509_extensions     = v3_${CA_TYPE}_ca
 
 [ req_distinguished_name ]
 # See <https://en.wikipedia.org/wiki/Certificate_signing_request>.
@@ -105,75 +119,73 @@ commonName                      = Common Name
 emailAddress                    = Email Address
 
 # Optionally, specify some defaults.
-countryName_default             = ${3}
-stateOrProvinceName_default     = ${4}
-localityName_default            = ${5}
-0.organizationName_default      = ${6}
-organizationalUnitName_default  = ${7}
-emailAddress_default            = ${8}
+countryName_default             = ${CA_COUNTRY_CODE}
+stateOrProvinceName_default     = ${CA_STATE}
+localityName_default            = ${CA_LOCALITY}
+0.organizationName_default      = ${CA_ORG}
+organizationalUnitName_default  = ${CA_ORG_UNIT}
+emailAddress_default            = ${CA_EMAIL}
 
 [ v3_root_ca ]
 # Extensions for a Root CA ('man x509v3_config').
 subjectKeyIdentifier    = hash
-authorityKeyIdentifier  = keyid:always,issuer
+authorityKeyIdentifier  = keyid:always,issuer:always
 basicConstraints        = critical, CA:true
 keyUsage                = critical, digitalSignature, cRLSign, keyCertSign
-#crlDistributionPoints   = crl_dist
-$(if [ ! -z "${10}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
+nsComment               = "Pika PKI Generated Root CA Certificate"
+$(if [ ! -z "${CA_CRL_DIST_URI}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
 
 [ v3_intermediate_ca ]
 # Extensions for an Intermediate CA ('man x509v3_config').
 subjectKeyIdentifier    = hash
-authorityKeyIdentifier  = keyid:always,issuer
+authorityKeyIdentifier  = keyid:always,issuer:always
 basicConstraints        = critical, CA:true
 keyUsage                = critical, digitalSignature, cRLSign, keyCertSign
-#crlDistributionPoints   = crl_dist
-$(if [ ! -z "${10}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
+nsComment               = "Pika PKI Generated Intermediate CA Certificate"
+$(if [ ! -z "${CA_CRL_DIST_URI}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
 
 [ v3_signing_ca ]
 # Extensions for a Signing CA ('man x509v3_config').
 subjectKeyIdentifier    = hash
-authorityKeyIdentifier  = keyid:always,issuer
+authorityKeyIdentifier  = keyid:always,issuer:always
 basicConstraints        = critical, CA:true, pathlen:0
 keyUsage                = critical, digitalSignature, cRLSign, keyCertSign
-#crlDistributionPoints   = crl_dist
-$(if [ ! -z "${10}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
+nsComment               = "Pika PKI Generated Signing CA Certificate"
+$(if [ ! -z "${CA_CRL_DIST_URI}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
 
 [ v3_ldap_ca ]
 # Extensions for a FreeIPA/RH IDM CA ('man x509v3_config').
 subjectKeyIdentifier    = hash
-authorityKeyIdentifier  = keyid:always,issuer
+authorityKeyIdentifier  = keyid:always,issuer:always
+nsComment               = "Pika PKI Generated LDAP CA Certificate"
 basicConstraints        = critical, CA:true
 keyUsage                = critical, digitalSignature, nonRepudiation, cRLSign, keyCertSign, dataEncipherment, keyEncipherment
 extendedKeyUsage        = clientAuth, emailProtection, serverAuth, codeSigning, OCSPSigning, ipsecIKE, timeStamping
-#crlDistributionPoints   = crl_dist
-$(if [ ! -z "${10}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
+$(if [ ! -z "${CA_CRL_DIST_URI}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
 
 [ user_cert ]
 # Extensions for client certificates ('man x509v3_config').
 basicConstraints        = CA:FALSE
 nsCertType              = client, email
-nsComment               = "OpenSSL Generated Client Certificate"
+nsComment               = "Pika PKI Generated Client Certificate"
 subjectKeyIdentifier    = hash
 authorityKeyIdentifier  = keyid,issuer
 keyUsage                = critical, nonRepudiation, digitalSignature, keyEncipherment
 issuerAltName           = issuer:copy
 extendedKeyUsage        = clientAuth, emailProtection
-#crlDistributionPoints   = crl_dist
-$(if [ ! -z "${10}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
+$(if [ ! -z "${CA_CRL_DIST_URI}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
 
 [ server_cert ]
 # Extensions for server certificates ('man x509v3_config').
 basicConstraints        = CA:FALSE
 nsCertType              = server
-nsComment               = "OpenSSL Generated Server Certificate"
+nsComment               = "Pika PKI Generated Server Certificate"
 subjectKeyIdentifier    = hash
 authorityKeyIdentifier  = keyid,issuer:always
 keyUsage                = critical, digitalSignature, keyEncipherment
 extendedKeyUsage        = serverAuth
 issuerAltName           = issuer:copy
-#crlDistributionPoints   = crl_dist
-$(if [ ! -z "${10}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
+$(if [ ! -z "${CA_CRL_DIST_URI}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
 
 [ openvpn_server_cert ]
 # OpenVPN Server Certificate Extensions
@@ -182,24 +194,22 @@ keyUsage                = critical, digitalSignature, dataEncipherment, keyEncip
 extendedKeyUsage        = critical, serverAuth
 subjectKeyIdentifier    = hash
 nsCertType              = server
-nsComment               = "OpenSSL Generated OpenVPN Server Certificate"
+nsComment               = "Pika PKI Generated OpenVPN Server Certificate"
 authorityKeyIdentifier  = keyid,issuer:always
 issuerAltName           = issuer:copy
-#crlDistributionPoints   = crl_dist
-$(if [ ! -z "${10}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
+$(if [ ! -z "${CA_CRL_DIST_URI}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
 
 [ openvpn_client_cert ]
 # Extensions for client certificates ('man x509v3_config').
 basicConstraints        = CA:FALSE
 nsCertType              = client
-nsComment               = "OpenSSL Generated OpenVPN Client Certificate"
+nsComment               = "Pika PKI Generated OpenVPN Client Certificate"
 subjectKeyIdentifier    = hash
 authorityKeyIdentifier  = keyid,issuer
 keyUsage                = critical, nonRepudiation, digitalSignature, dataEncipherment, keyEncipherment
 issuerAltName           = issuer:copy
 extendedKeyUsage        = clientAuth
-#crlDistributionPoints   = crl_dist
-$(if [ ! -z "${10}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
+$(if [ ! -z "${CA_CRL_DIST_URI}" ]; then echo "crlDistributionPoints   = crl_dist"; fi)
 
 [ ocsp ]
 # Extension for OCSP signing certificates ('man ocsp').
@@ -211,16 +221,16 @@ extendedKeyUsage        = critical, OCSPSigning
 
 EOF
 
-    if [ ! -z "${10}" ]; then
-      cat << EOF >> ${1}/openssl.cnf
+    if [ ! -z "${CA_CRL_DIST_URI}" ]; then
+      cat << EOF >> ${CA_PATH}/openssl.cnf
 [ crl_ext ]
 # Extension for CRLs ('man x509v3_config').
 authorityKeyIdentifier  = keyid:always
 issuerAltName           = issuer:copy
 
 [ crl_dist ]
-# CRL Download address for the ${2} CA
-fullname                = URI:${10}
+# CRL Download address for the ${CA_TYPE} CA
+fullname                = URI:${CA_CRL_DIST_URI}/${CA_TYPE}-ca.${CA_SLUG}.crl
 
 EOF
     fi

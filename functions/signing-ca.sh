@@ -69,7 +69,7 @@ function promptNewSigningCAEmail {
 }
 
 function promptNewSigningCACRLURL {
-  local SIGNING_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI: " --placeholder "https://acme.com/pki/crl")
+  local SIGNING_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI Root: " --placeholder "https://acme.com/pki/crl")
   echo ${SIGNING_CA_CRL_DIST_URI}
 }
 
@@ -164,7 +164,7 @@ function createNewSigningCA {
     createCommonCAAssets "${SIGNING_CA_DIR}" "Signing"
     
     echo -e "- Creating default OpenSSL configuration files..."
-    generateOpenSSLConfFile "${SIGNING_CA_DIR}" "signing" "${SIGNING_CA_COUNTRY_CODE}" "${SIGNING_CA_STATE}" "${SIGNING_CA_LOCALITY}" "${SIGNING_CA_ORGANIZATION}" "${SIGNING_CA_ORGANIZATIONAL_UNIT}" "${SIGNING_CA_EMAIL}" 1875 "${SIGNING_CA_CRL_DIST_URI}"
+    generateOpenSSLConfFile "${SIGNING_CA_DIR}" "${SIGNING_CA_NAME}" "${SIGNING_CA_SLUG}" "signing" "${SIGNING_CA_COUNTRY_CODE}" "${SIGNING_CA_STATE}" "${SIGNING_CA_LOCALITY}" "${SIGNING_CA_ORGANIZATION}" "${SIGNING_CA_ORGANIZATIONAL_UNIT}" "${SIGNING_CA_EMAIL}" 1875 "${SIGNING_CA_CRL_DIST_URI}"
     
     generatePrivateKey "${SIGNING_CA_DIR}/private/ca.key.pem" "Signing CA"
 

@@ -200,12 +200,7 @@ function createNewSigningCA {
     fi
 
     if [ ! -z "${SIGNING_CA_CRL_DIST_URI}" ]; then
-      if [ ! -f ${SIGNING_CA_DIR}/crl/ca.crl.pem ]; then
-        echo "- No CRL found, creating now..."
-        openssl ca -config ${SIGNING_CA_DIR}/openssl.cnf -gencrl -out ${SIGNING_CA_DIR}/crl/ca.crl.pem
-      else
-        echo "- CRL already exists: ${SIGNING_CA_DIR}/crl/ca.crl.pem"
-      fi
+      createCRLFile "${SIGNING_CA_DIR}"
     fi
 
     selectCAActions "${SIGNING_CA_DIR}"

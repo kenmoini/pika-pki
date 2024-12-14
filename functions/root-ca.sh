@@ -94,6 +94,8 @@ function selectRootCA {
     ROOT_CA_COMMON_NAMES_STR+="\n$ROOT_CA_COMMON_NAME"
   done <<< "$ROOT_CA_DIRS"
 
+  ROOT_CA_COMMON_NAMES_STR=${ROOT_CA_COMMON_NAMES_STR}'\n[x] Exit'
+
   clear
   echoBanner "Root CA Selection"
 
@@ -106,6 +108,10 @@ function selectRootCA {
   case "${ROOT_CA_CHOICE}" in
     ("[+] Create a new Root CA")
       createNewRootCA
+      ;;
+    ("[x] Exit")
+      echo "Exiting..."
+      exit 0
       ;;
     (*)
       local ROOT_CA_CN=$(echo -e ${ROOT_CA_GLUE_STR} | grep -e "|${ROOT_CA_CHOICE}\$" | cut -d"|" -f2)
@@ -174,12 +180,7 @@ function createNewRootCA {
     fi
 
     if [ ! -z "${ROOT_CA_CRL_DIST_URI}" ]; then
-      if [ ! -f ${ROOT_CA_DIR}/crl/ca.crl.pem ]; then
-        echo "- No CRL found, creating now..."
-        openssl ca -config ${ROOT_CA_DIR}/openssl.cnf -gencrl -out ${ROOT_CA_DIR}/crl/ca.crl.pem
-      else
-        echo "- CRL already exists: ${ROOT_CA_DIR}/crl/ca.crl.pem"
-      fi
+      createCRLFile "${ROOT_CA_DIR}"
     fi
 
   fi

@@ -187,3 +187,82 @@ function certificateSelectionScreen {
   esac
 
 }
+
+# generateCAChain generates a certificate chain for any given certificate
+# $1 - Certificate Path
+# $2 - Include Root (default: false)
+#
+# Proper order of Certs in a chain:
+#
+# -----BEGIN CERTIFICATE-----
+# [Server Certificate]
+# -----END CERTIFICATE-----
+# -----BEGIN CERTIFICATE-----
+# [Intermediate certificate L1]
+# -----END CERTIFICATE-----
+# -----BEGIN CERTIFICATE-----
+# [Intermediate certificate L2]
+# -----END CERTIFICATE-----
+# -----BEGIN CERTIFICATE-----
+# [Root Certificate]
+# -----END CERTIFICATE-----
+#
+function generateCAChain {
+  local CERT_PATH=${1} # /path/to/pki/roots/ca/intermediate-ca/int/certs/ca.cert.pem
+  local INCLUDE_ROOT=${2:-"false"}
+  local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH})) # /path/to/pki/roots/ca/intermediate-ca/int
+  local CERT_CA_PATH_PARENT_TYPE=$(basename $(dirname ${CERT_CA_PATH})) # intermediate-ca
+  local CERT_CA_PEM=$(cat "${CERT_CA_PATH}/certs/ca.cert.pem")
+  local CERT_CA_CN=$(getCertificateCommonName "${CERT_CA_PATH}/certs/ca.cert.pem")
+  
+  local CHAIN_PEM=""
+
+  if [ "${CERT_CA_PATH_PARENT_TYPE}" != "roots" ]; then
+    # If this is a signing or intermediate CA, cat out this cert, then suffix the parent cert via a loop
+    echo "# ${CERT_CA_CN}"
+    CHAIN_PEM=''${CERT_CA_PEM}'\n'$(generateCAChain "$(dirname $(dirname ${CERT_CA_PATH}))/certs/ca.cert.pem" "${INCLUDE_ROOT}")
+  else
+    # If this is a root CA, only cat out this cert if we're including the root
+    if [ "${INCLUDE_ROOT}" == "true" ]; then
+      echo "# ${CERT_CA_CN}"
+      CHAIN_PEM=${CERT_CA_PEM}
+    fi
+  fi
+
+  echo -e "${CHAIN_PEM}"
+}
+
+# isCertificateAuthority checks if a certificate is a Certificate Authority.
+# $1 - Certificate Path
+function isCertificateAuthority {
+  local CERT_PATH=${1}
+  local IS_CA=$(openssl x509 -noout -text -in ${CERT_PATH} | grep -e "CA:TRUE")
+  if [ ! -z "${IS_CA}" ]; then
+    echo "true"
+  else
+    echo "false"
+  fi
+}
+
+function getRootCAPath {
+  local CERT_PATH=${1}
+  local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
+  local CERT_CA_PARENT=$(basename $(dirname ${CERT_CA_PATH}))
+  local CERT_CA_PARENT_CA_PATH=$(dirname $(dirname ${CERT_CA_PATH}))
+
+  if [ "${CERT_CA_PARENT}" == "roots" ]; then
+    echo ${CERT_CA_PATH}
+  else
+    getRootCAPath "${CERT_CA_PARENT_CA_PATH}/certs/ca.cert.pem"
+  fi
+}
+
+function createCRLFile {
+  local CA_DIR=${1}
+  if [ ! -f ${CA_DIR}/crl/ca.crl.pem ]; then
+    echo "- No CRL found, creating now..."
+    openssl ca -config ${CA_DIR}/openssl.cnf -gencrl -out ${CA_DIR}/crl/ca.crl.pem
+  else
+    echo "- CRL already exists: ${CA_DIR}/crl/ca.crl.pem"
+  fi
+}

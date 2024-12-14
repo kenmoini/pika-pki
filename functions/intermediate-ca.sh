@@ -195,12 +195,7 @@ function createNewIntermediateCA {
     fi
 
     if [ ! -z "${INTERMEDIATE_CA_CRL_DIST_URI}" ]; then
-      if [ ! -f ${INTERMEDIATE_CA_DIR}/crl/ca.crl.pem ]; then
-        echo "- No CRL found, creating now..."
-        openssl ca -config ${INTERMEDIATE_CA_DIR}/openssl.cnf -gencrl -out ${INTERMEDIATE_CA_DIR}/crl/ca.crl.pem
-      else
-        echo "- CRL already exists: ${INTERMEDIATE_CA_DIR}/crl/ca.crl.pem"
-      fi
+      createCRLFile "${INTERMEDIATE_CA_DIR}"
     fi
 
     selectCAActions "${INTERMEDIATE_CA_DIR}"

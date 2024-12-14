@@ -5,6 +5,18 @@ shopt -s extglob;
 source ${SCRIPT_DIR}/functions/formatting.sh
 source ${SCRIPT_DIR}/functions/common.sh
 
+# promptSavePath will prompt the user to select a path to save a file
+# {1} PATH_START: The path to start searching from
+function promptSavePath {
+  local PATH_START=${1}
+  local SAVE_PATH=$(GUM_FILE_DIRECTORY="true" GUM_FILE_FILE="false" GUM_FILE_ALL="true" GUM_FILE_HEIGHT="16" gum file ${PATH_START})
+  if [ -z "$SAVE_PATH" ]; then
+    promptSavePath
+  else
+    echo ${SAVE_PATH}
+  fi
+}
+
 function promptNewServerCertificateName {
   local SERVER_CERT_NAME=$(gum input --prompt "* Server Certificate [Common] Name: " --placeholder "server.acme.com")
   if [ -z "$SERVER_CERT_NAME" ]; then
@@ -214,7 +226,7 @@ function selectCertificateActions {
 
   if [ "${HEADER_OFF}" == "false" ]; then
     clear
-    echoBanner "[Certificate] $(basename $CERT_PATH | sed 's|.cert.pem||g')"
+    echoBanner "[Certificate] ${CERT_CN} - Certificate Actions"
     echo "===== Path: $(getPKIPath ${CERT_CA_PATH})"
   fi
 
@@ -239,7 +251,7 @@ function selectCertificateActions {
       certificateSelectionScreen ${CERT_CA_PATH}
       ;;
     "[+] Save Certificate")
-      saveCertificate ${CERT_PATH}
+      saveCertificateActions ${CERT_PATH}
       ;;
     "[+] View Certificate")
       viewCertificate ${CERT_PATH}
@@ -265,7 +277,7 @@ function viewCertificate {
   local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
 
   clear
-  echoBanner "[Certificate] $(basename $CERT_PATH | sed 's|.cert.pem||g')"
+  echoBanner "[Certificate] ${CERT_CN} - View Certificate"
   echo "===== Path: $(getPKIPath ${CERT_CA_PATH})"
 
   local CERT_ORG=$(openssl x509 -noout -subject -in ${CERT_PATH} -nameopt multiline | awk -F' = ' '/organizationName/ {print $2}')
@@ -274,7 +286,7 @@ function viewCertificate {
   local CERT_END_DATE=$(openssl x509 -noout -enddate -in ${CERT_PATH} | cut -d'=' -f2)
   local CERT_FINGERPRINT=$(openssl x509 -noout -fingerprint -in ${CERT_PATH} | cut -d'=' -f2)
   local CERT_SERIAL=$(openssl x509 -noout -serial -in ${CERT_PATH} | cut -d'=' -f2)
-  local CERT_LOCATION="$(openssl x509 -noout -subject -in ${CERT_PATH} -nameopt multiline | awk -F' = ' '/localityName/ {print $2}')$(openssl x509 -noout -subject -in ${CERT_PATH} -nameopt multiline | awk -F' = ' '/stateOrProvinceName/ {print $2}'), $(openssl x509 -noout -subject -in ${CERT_PATH} -nameopt multiline | awk -F' = ' '/countryName/ {print $2}')"
+  local CERT_LOCATION="$(openssl x509 -noout -subject -in ${CERT_PATH} -nameopt multiline | awk -F' = ' '/localityName/ {print $2}') $(openssl x509 -noout -subject -in ${CERT_PATH} -nameopt multiline | awk -F' = ' '/stateOrProvinceName/ {print $2}'), $(openssl x509 -noout -subject -in ${CERT_PATH} -nameopt multiline | awk -F' = ' '/countryName/ {print $2}')"
 
   echo "- Common Name: ${CERT_CN}"
   echo "- Organization, Unit: ${CERT_ORG}, ${CERT_ORG_UNIT}"
@@ -299,7 +311,7 @@ function deleteCertificate {
   local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
 
   clear
-  echoBanner "[Certificate] $(basename $CERT_PATH | sed 's|.cert.pem||g')"
+  echoBanner "[Certificate] ${CERT_CN} - Delete Certificate"
   echo "===== Path: $(getPKIPath ${CERT_CA_PATH})"
 
   echo -e "\n====== DANGER ZONE ======\n====== DANGER ZONE ======\n====== DANGER ZONE ======\n"
@@ -326,7 +338,7 @@ function revokeCertificate {
   local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
 
   clear
-  echoBanner "[Certificate] $(basename ${CERT_PATH} | sed 's|.cert.pem||g')"
+  echoBanner "[Certificate] ${CERT_CN} - Revoke Certificate"
   echo "===== Path: $(getPKIPath ${CERT_CA_PATH})"
 
   echo -e "\n====== DANGER ZONE ======\n====== DANGER ZONE ======\n====== DANGER ZONE ======\n"
@@ -346,4 +358,111 @@ function revokeCertificate {
     #echo "Certificate deletion cancelled."
     selectCertificateActions ${CERT_PATH}
   fi
+}
+
+function saveCertificateActions {
+  local CERT_PATH=${1}
+  local HEADER_OFF=${2:-"false"}
+  local CERT_CN=$(getCertificateCommonName ${CERT_PATH})
+  local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
+
+  if [ "${HEADER_OFF}" == "false" ]; then
+    clear
+    echoBanner "[Certificate] ${CERT_CN} - Save Certificate Type"
+    echo "===== Path: $(getPKIPath ${CERT_CA_PATH})"
+  fi
+
+  local CERT_OPTIONS='../ Back\n[+] Save Certificate as PKCS#12\n[+] Save Certificate as PEM\n[+] Save Certificate Bundle\n[+] Save HAProxy Bundle'
+
+  local SELECTED_ACTION=$(echo -e $CERT_OPTIONS | gum choose)
+  if [ -z "$SELECTED_ACTION" ]; then
+    echo "No action selected, exiting..."
+    exit 1
+  fi
+
+  case "$SELECTED_ACTION" in
+    "../ Back")
+      selectCertificateActions ${CERT_PATH}
+      ;;
+    "[+] Save Certificate as PKCS#12")
+      saveCertificateFiles ${CERT_PATH} "pkcs12"
+      ;;
+    "[+] Save Certificate as PEM")
+      saveCertificateFiles ${CERT_PATH} "pem"
+      ;;
+    "[+] Save Certificate Bundle")
+      saveCertificateFiles ${CERT_PATH} "bundle"
+      ;;
+    "[+] Save HAProxy Bundle")
+      saveCertificateFiles ${CERT_PATH} "haproxy"
+      ;;
+    *)
+      echo "Invalid selection, exiting"
+      exit 1
+      ;;
+  esac
+}
+
+function saveCertificateFiles {
+  local CERT_PATH=${1}
+  local SAVE_TYPE=${2}
+  local CERT_CN=$(getCertificateCommonName ${CERT_PATH})
+  local CERT_CN_SLUG=$(slugify "${CERT_CN}")
+  local CERT_KEY_PATH=$(echo ${CERT_PATH} | sed 's|.cert.pem|.key.pem|g' | sed 's|certs/|private/|g')
+  local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
+
+  clear
+  echoBanner "[Certificate] ${CERT_CN} - Save Certificate Bundle"
+  echo -e "===== Path: $(getPKIPath ${CERT_CA_PATH})\n"
+  echo "Use your keyboard to select a path to save the certificate bundle."
+  echo -e " Up | Down | Left = Parent Directory | Right = Enter Directory | Enter = Select Directory\n"
+
+  local SAVE_PATH_SELECTION=$(promptSavePath ${PIKA_PKI_DIR})
+
+  if [ "$(isCertificateAuthority ${CERT_PATH})" == "true" ]; then
+    local SAVE_PATH=${SAVE_PATH_SELECTION}/${CERT_CN_SLUG}
+  else
+    local SAVE_PATH=${SAVE_PATH_SELECTION}/${CERT_CN}
+  fi
+
+  mkdir -p ${SAVE_PATH}
+  
+  # Copy the Root CA over - that's always handy
+  cp "$(getRootCAPath ${CERT_PATH})/certs/ca.cert.pem" ${SAVE_PATH}/root-ca.pem
+
+  # Basic certificate bundle and PEM files
+  if [ "${SAVE_TYPE}" == "pem" ] || [ "${SAVE_TYPE}" == "bundle" ]; then
+    cp ${CERT_PATH} ${SAVE_PATH}/cert.pem
+    cp ${CERT_KEY_PATH} ${SAVE_PATH}/key.pem
+    cp ${CERT_CA_PATH}/certs/ca.cert.pem ${SAVE_PATH}/ca.pem
+  fi
+
+  # Generate the CA chain files
+  if [ "${SAVE_TYPE}" == "bundle" ]; then
+    generateCAChain ${CERT_PATH} > ${SAVE_PATH}/chain.pem
+    generateCAChain ${CERT_PATH} "true" > ${SAVE_PATH}/full-chain.pem
+
+    # Concatenate the cert and chain files
+    cat ${CERT_PATH} ${SAVE_PATH}/chain.pem > ${SAVE_PATH}/cert-chain.pem
+    cat ${CERT_PATH} ${SAVE_PATH}/full-chain.pem > ${SAVE_PATH}/cert-full-chain.pem
+  fi
+
+  if [ "${SAVE_TYPE}" == "haproxy" ]; then
+    cat ${CERT_KEY_PATH} ${CERT_PATH} > ${SAVE_PATH}/haproxy.pem
+    cat ${CERT_KEY_PATH} ${CERT_PATH} > ${SAVE_PATH}/haproxy-chain.pem
+    cat ${CERT_KEY_PATH} ${CERT_PATH} > ${SAVE_PATH}/haproxy-full-chain.pem
+
+    generateCAChain ${CERT_PATH} >> ${SAVE_PATH}/haproxy-chain.pem
+    generateCAChain ${CERT_PATH} "true" >> ${SAVE_PATH}/haproxy-full-chain.pem
+  fi
+
+  # https://jackstromberg.com/2013/01/generating-a-pkcs12-file-with-openssl/
+  if [ "${SAVE_TYPE}" == "pkcs12" ]; then
+    local PKCS12_PASS=$(gum input --password --prompt "Enter a password for the PKCS#12 file: ")
+    openssl pkcs12 -export -out ${SAVE_PATH}/cert.p12 -inkey ${CERT_KEY_PATH} -in ${CERT_PATH} -certfile ${CERT_CA_PATH}/certs/ca.cert.pem -passout pass:${PKCS12_PASS}
+  fi
+
+  tree ${SAVE_PATH}
+
+  saveCertificateActions ${CERT_PATH} "true"
 }

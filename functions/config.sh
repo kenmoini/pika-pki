@@ -96,6 +96,8 @@ organizationalUnitName  = optional
 commonName              = supplied
 emailAddress            = supplied
 
+## TODO: Add a policy for LDAP CAs?
+
 [ req ]
 # Options for the 'req' tool ('man req').
 default_bits        = 4096

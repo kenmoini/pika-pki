@@ -17,6 +17,8 @@ Pika PKI is a PKI management Text User Interface (TUI).  It's built using [gum](
 - sed
 - tree
 
+Or, just Docker/Podman.
+
 ## Getting Started
 
 ### The Old Fashioned Way

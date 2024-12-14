@@ -2,13 +2,15 @@
 
 Pika PKI is a PKI management Text User Interface (TUI).  It's built using [gum](https://github.com/charmbracelet/gum?tab=readme-ov-file), which is a dependency.
 
-![Pika PKI Logo, a picture of a lock with a lightning bolt as the keyhole](pika-pki-logo.png "Pika PKI")
+<table borderwidth="0"><tbody><tr><td><center><img width="200" alt="Pika PKI Logo, a picture of a lock with a lightning bolt as the keyhole" src="./pika-pki-logo.png" /></center></td><td>
 
 - Create multiple Root Certificate Authorities
 - Define your PKI Chain however you want with Intermediate CAs and Signing CAs
 - Sign certificates anywhere along the chain
 - Built on standard OpenSSL commands and configurations
 - Easily create certificates bundles for HAProxy, OpenShift, and more
+
+</td></tr></tbody></table>
 
 ## Dependencies
 

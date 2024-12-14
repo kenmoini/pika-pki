@@ -14,8 +14,11 @@ Pika PKI is a PKI management Text User Interface (TUI).  It's built using [gum](
 - OpenSSL
 - grep
 - sed
+- tree
 
 ## Getting Started
+
+### The Old Fashioned Way
 
 1. [Install gum](https://github.com/charmbracelet/gum?tab=readme-ov-file#installation).
 2. Clone this repo `git clone https://github.com/kenmoini/pika-pki`
@@ -23,6 +26,16 @@ Pika PKI is a PKI management Text User Interface (TUI).  It's built using [gum](
 4. Run `./pika-pki`
 5. ???????
 6. ***PROFIT!!!!!!1***
+
+### The Cloud Native Containers-for-everything Wway
+
+```bash
+# Create a directory to store the PKI assets
+mkdir pika-pki
+
+# Run the container???
+podman run --rm -it -v ./pika-pki:/data:Z quay.io/kenmoini/pika-pki:latest
+```
 
 ## Optional Parameters
 
@@ -41,7 +54,6 @@ To override some default behavior you can override some parameters via Environme
 
 ## TODO
 
-- Saving a Certificate to a path
 - CRL Rotation
 - CRL Distribution
-- GitHub Actions for container builds
+- Proper GitHub software releases?

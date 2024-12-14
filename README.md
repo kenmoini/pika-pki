@@ -12,6 +12,7 @@ Pika PKI is a PKI management Text User Interface (TUI).  It's built using [gum](
 
 - [Gum](https://github.com/charmbracelet/gum)
 - OpenSSL
+- ncurses
 - grep
 - sed
 - tree
@@ -20,7 +21,7 @@ Pika PKI is a PKI management Text User Interface (TUI).  It's built using [gum](
 
 ### The Old Fashioned Way
 
-1. [Install gum](https://github.com/charmbracelet/gum?tab=readme-ov-file#installation).
+1. [Install gum](https://github.com/charmbracelet/gum?tab=readme-ov-file#installation) and above other dependencies.
 2. Clone this repo `git clone https://github.com/kenmoini/pika-pki`
 3. Enter the directory `cd pika-pki`
 4. Run `./pika-pki`

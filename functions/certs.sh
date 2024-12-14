@@ -247,7 +247,7 @@ function selectCertificateActions {
     "[+] Delete Certificate"*)
       deleteCertificate ${CERT_PATH}
       ;;
-    "[+] Revoke Certificate"*)
+    "[+] Revoke Certificate")
       revokeCertificate ${CERT_PATH}
       ;;
     *)

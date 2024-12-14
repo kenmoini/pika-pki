@@ -303,7 +303,7 @@ function deleteCertificate {
   echo "===== Path: $(getPKIPath ${CERT_CA_PATH})"
 
   echo -e "\n====== DANGER ZONE ======\n====== DANGER ZONE ======\n====== DANGER ZONE ======\n"
-  echo "Are you sure you want to delete the certificate?"
+  echo "Are you sure you want to DELETE the certificate?"
 
   if gum confirm; then
     sed -i '/[[:blank:]]'${CERT_SERIAL}'[[:blank:]]/d' ${CERT_CA_PATH}/index.txt
@@ -312,6 +312,38 @@ function deleteCertificate {
     certificateSelectionScreen ${CERT_CA_PATH}
   else
     echo "Certificate deletion cancelled."
+    selectCertificateActions ${CERT_PATH}
+  fi
+}
+
+# revokeCertificate will revoke a certificate and its associated files
+# {1} CERT_PATH: The path to the certificate to revoke
+function revokeCertificate {
+  local CERT_PATH=${1}
+  local CSR_PATH=$(echo ${CERT_PATH} | sed 's|.cert.pem|.csr.pem|g' | sed 's|certs/|csr/|g')
+  local KEY_PATH=$(echo ${CERT_PATH} | sed 's|.cert.pem|.key.pem|g' | sed 's|certs/|private/|g')
+  local CERT_CN=$(getCertificateCommonName ${CERT_PATH})
+  local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
+
+  clear
+  echoBanner "[Certificate] $(basename ${CERT_PATH} | sed 's|.cert.pem||g')"
+  echo "===== Path: $(getPKIPath ${CERT_CA_PATH})"
+
+  echo -e "\n====== DANGER ZONE ======\n====== DANGER ZONE ======\n====== DANGER ZONE ======\n"
+  echo "Are you sure you want to REVOKE the certificate?"
+
+  if gum confirm; then
+    openssl ca -config ${CERT_CA_PATH}/openssl.cnf \
+      revoke ${CERT_PATH}
+
+    mv ${CERT_PATH} ${CERT_PATH}.revoked
+    mv ${CSR_PATH} ${CSR_PATH}.revoked
+    mv ${KEY_PATH} ${KEY_PATH}.revoked
+
+    #echo "Certificate revoked: ${CERT_CN}"
+    certificateSelectionScreen ${CERT_CA_PATH}
+  else
+    #echo "Certificate deletion cancelled."
     selectCertificateActions ${CERT_PATH}
   fi
 }

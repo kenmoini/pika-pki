@@ -106,7 +106,7 @@ function selectCAActions {
   local INTERMEDIATE_CA_COUNT=0
   local SIGNING_CA_COUNT=0
   local CERTIFICATE_COUNT=0
-  local CERTIFICATES=$(find ${ACTIVE_CA_PATH}/certs/ -maxdepth 1 -type f -printf '%p\n' | grep -ve "^${ACTIVE_CA_PATH}/certs/ca.cert.pem$")
+  local CERTIFICATES=$(find ${ACTIVE_CA_PATH}/certs/ -maxdepth 1 -type f -name '*.cert.pem' -printf '%p\n' | grep -ve "^${ACTIVE_CA_PATH}/certs/ca.cert.pem$")
   local CERTIFICATE_COUNT=$(echo -e "${CERTIFICATES}" | sed '/^$/d' | wc -l)
   local CA_ACTIONS='../ Back\n[+] Certificates ('$CERTIFICATE_COUNT')'
   
@@ -152,11 +152,13 @@ function selectCAActions {
   esac
 }
 
+# certificateSelectionScreen displays a list of certificates for a CA and allows the user to select one for further actions.
+# $1 - CA Path
 function certificateSelectionScreen {
   local CA_PATH=${1}
   local CA_TYPE=$(getCAType ${CA_PATH})
   local CERT_OPTIONS='../ Back\n[+] Create a new Certificate'
-  local CERTIFICATES=$(find ${CA_PATH}/certs/ -maxdepth 1 -type f -printf '%p\n' | grep -ve "^${CA_PATH}/certs/ca.cert.pem$" | sed '/^$/d' | sed 's|'${CA_PATH}'/certs/||g' | sed 's|.cert.pem||g')
+  local CERTIFICATES=$(find ${CA_PATH}/certs/ -maxdepth 1 -type f -name '*.cert.pem' -printf '%p\n' | grep -ve "^${CA_PATH}/certs/ca.cert.pem$" | sed '/^$/d' | sed 's|'${CA_PATH}'/certs/||g' | sed 's|.cert.pem||g')
   if [ ! -z "${CERTIFICATES}" ]; then
     CERT_OPTIONS=''${CERT_OPTIONS}'\n'${CERTIFICATES}''
   fi

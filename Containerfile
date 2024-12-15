@@ -6,7 +6,7 @@ USER 0
 
 RUN cp /app/charm.repo /etc/yum.repos.d/charm.repo \
  && rpm --import https://repo.charm.sh/yum/gpg.key \
- && dnf install -y openssl gum ncurses
+ && dnf install -y openssl gum ncurses tree sed grep
 
 USER 1001
 

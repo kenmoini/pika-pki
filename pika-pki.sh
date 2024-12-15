@@ -14,6 +14,8 @@ if [ -d "${SCRIPT_DIR}/overrides" ]; then
   else
     source ${SCRIPT_DIR}/functions/config.sh
   fi
+else
+  source ${SCRIPT_DIR}/functions/config.sh
 fi
 source ${SCRIPT_DIR}/functions/root-ca.sh
 source ${SCRIPT_DIR}/functions/intermediate-ca.sh

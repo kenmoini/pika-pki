@@ -50,6 +50,7 @@ podman run --rm -it -v ./pika-pki:/data:Z quay.io/kenmoini/pika-pki:latest
 - There can be any number of Intermediate CAs under a Root CA or other Intermediate CAs
 - Signing CAs denote the last CA in the chain - it cannot sign Certificates for a subordinate CA
 - Any CA along the chain can sign Certificates of any sort, but it's best to leave that to a Signing CA at the end of the chain
+- The Workspace directory stores all the assets for the PKI - in that directory structure you will find a `public_bundles` folder with a set of subdirectories called `certs` and `crls`.  This is where public Certificates like CA Certificates and CRLs will be stored.  You should be able to copy or symlink the path to where a web server can host those assets.
 
 ## Optional Parameters
 
@@ -57,7 +58,7 @@ To override some default behavior you can override some parameters via Environme
 
 | Variable | Default | Note |
 |----------|---------|------|
-| PIKA_PKI_DIR | `$(pwd)/.pika-pki` | By Default all assets will be created in a dot directory under the local execution directory |
+| PIKA_PKI_DIR | `$(pwd)/.pika-pki` | Workspace directory - where PKI assets are stored |
 | PIKA_PKI_DEFAULT_ORG | `""` | Will provide a default answer for the questions asking for an Organization |
 | PIKA_PKI_DEFAULT_ORGUNIT | `""` | Will provide a default answer for the questions asking for an Organization Unit |
 | PIKA_PKI_DEFAULT_COUNTRY | `""` | Will provide a default answer for the questions asking for a Country |
@@ -72,9 +73,9 @@ To override some default behavior you can override some parameters via Environme
 
 When creating a Certificate Authority, you will be prompted for an optional parameter, "CRL URI Root".  This is the base path where the CRL will be served for clients to query revoked certificates.
 
-You should provide the base URI to where a public server is available - eg if you provide `https://ca.example.com/public` then the CRL will be configured and presented as `https://ca.example.com/public/crl/root-ca.my-root-ca.crl`.
+You should provide the base URI to where a public server is available - eg if you provide `https://ca.example.com/public` then the CRL will be configured and presented as `https://ca.example.com/public/crls/root-ca.my-root-ca.crl`.
 
-The format is `${URI_ROOT}/${CA_TYPE}-ca.${CA_CN_SLUG}.crl`.
+The format is `${URI_ROOT}/crls/${CA_TYPE}-ca.${CA_CN_SLUG}.crl`.
 
 If you'd like the CRL to be hosted on a different path, then modify the default OpenSSL Configuration.
 

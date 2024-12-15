@@ -34,7 +34,7 @@ Or, just Docker/Podman.
 5. ???????
 6. ***PROFIT!!!!!!1***
 
-### The Cloud Native Containers-for-everything Wway
+### The Cloud Native Containers-for-everything Way
 
 ```bash
 # Create a directory to store the PKI assets
@@ -59,8 +59,27 @@ To override some default behavior you can override some parameters via Environme
 | PIKA_PKI_DEFAULT_EMAIL | `""` | Will provide a default answer for the questions asking for an email address |
 | PIKA_PKI_CERT_KEY_ENCRYPTION | `"false"` | By default non-CA leaf certificates do not encrypt their private keys - set to `true` to password encrypt certificate keys |
 
+## Advanced Usage
+
+### Certificate Revokation Lists
+
+When creating a Certificate Authority, you will be prompted for an optional parameter, "CRL URI Root".  This is the base path where the CRL will be served for clients to query revoked certificates.
+
+You should provide the base URI to where a public server is available - eg if you provide `https://ca.example.com/public` then the CRL will be configured and presented as `https://ca.example.com/public/crl/root-ca.my-root-ca.crl`.
+
+The format is `${URI_ROOT}/${CA_TYPE}-ca.${CA_CN_SLUG}.crl`.
+
+If you'd like the CRL to be hosted on a different path, then modify the default OpenSSL Configuration.
+
+### Overriding OpenSSL Configuration
+
+The default configuration can be found in `functions/config.sh`.  There is some logic and templating involved which is why it is embedded in a Bash script.
+
+To override these defaults, create a folder called `overrides` in this directory, copy the `functions/config.sh` file into it, and modify as needed.
+
 ## TODO
 
 - CRL Rotation
 - CRL Distribution
+- CA Distribution
 - Proper GitHub software releases?

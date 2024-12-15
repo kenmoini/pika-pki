@@ -11,6 +11,6 @@ RUN cp /app/charm.repo /etc/yum.repos.d/charm.repo \
 USER 1001
 
 WORKDIR /data
-ENV TERM xterm-256color
+ENV TERM=xterm-256color
 
-CMD "/app/pika-pki.sh"
+CMD ["/app/pika-pki.sh"]

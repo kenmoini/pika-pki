@@ -12,3 +12,10 @@ function slugify {
 }
 
 nclr () { local j; for ((j = 0; j <= "${1:-1}"; j++ )); do tput cuu1; done; tput ed; }
+
+function indent () {
+    local string="$1"
+    local num_spaces="$2"
+
+    printf "%${num_spaces}s%s\n" '' "$string"
+}

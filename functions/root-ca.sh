@@ -74,6 +74,12 @@ function promptNewRootCACRLURL {
 
 function selectRootCA {
   local ROOT_CA_DIRS=$(find ${PIKA_PKI_DIR}/roots/ -maxdepth 1 -type d -printf '%p\n' | grep -ve "^${PIKA_PKI_DIR}/roots/$")
+  if [ -z "$ROOT_CA_DIRS" ]; then
+    echo "No Root CA's found.  Would you like to create a new one?"
+    if gum confirm; then
+      createNewRootCA
+    fi
+  fi
 
   local ROOT_CA_CERT=""
   local ROOT_CA_COMMON_NAME=""
@@ -91,7 +97,7 @@ function selectRootCA {
     ROOT_CA_GLUE+=("${line}|${ROOT_CA_COMMON_NAME}")
     ROOT_CA_GLUE_STR="${ROOT_CA_GLUE_STR}${line}|${ROOT_CA_COMMON_NAME}\n"
     ROOT_CA_COMMON_NAMES+=("${ROOT_CA_COMMON_NAME}")
-    ROOT_CA_COMMON_NAMES_STR+="\n$ROOT_CA_COMMON_NAME"
+    ROOT_CA_COMMON_NAMES_STR+='\n-|- '${ROOT_CA_COMMON_NAME}
   done <<< "$ROOT_CA_DIRS"
 
   ROOT_CA_COMMON_NAMES_STR=${ROOT_CA_COMMON_NAMES_STR}'\n[x] Exit'
@@ -99,7 +105,7 @@ function selectRootCA {
   clear
   echoBanner "Root CA Selection"
 
-  local ROOT_CA_CHOICE=$(echo -e $ROOT_CA_COMMON_NAMES_STR | gum choose)
+  local ROOT_CA_CHOICE=$(echo -e ${ROOT_CA_COMMON_NAMES_STR} | gum choose)
   if [ -z "$ROOT_CA_CHOICE" ]; then
     echo "No Root CA selected.  Exiting..."
     exit 1
@@ -114,8 +120,9 @@ function selectRootCA {
       exit 0
       ;;
     (*)
-      local ROOT_CA_CN=$(echo -e ${ROOT_CA_GLUE_STR} | grep -e "|${ROOT_CA_CHOICE}\$" | cut -d"|" -f2)
-      local ROOT_CA_DIR=$(echo -e ${ROOT_CA_GLUE_STR} | grep -e "|${ROOT_CA_CHOICE}\$" | cut -d"|" -f1)
+      local CLEANED_ROOT_CA_CHOICE=$(echo ${ROOT_CA_CHOICE} | sed 's/-|- //')
+      local ROOT_CA_CN=$(echo -e ${ROOT_CA_GLUE_STR} | grep -e "|${CLEANED_ROOT_CA_CHOICE}\$" | cut -d"|" -f2)
+      local ROOT_CA_DIR=$(echo -e ${ROOT_CA_GLUE_STR} | grep -e "|${CLEANED_ROOT_CA_CHOICE}\$" | cut -d"|" -f1)
       selectCAActions "${ROOT_CA_DIR}"
       ;;
   esac

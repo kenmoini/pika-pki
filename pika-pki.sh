@@ -8,7 +8,13 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 source ${SCRIPT_DIR}/functions/common.sh
 source ${SCRIPT_DIR}/functions/formatting.sh
-source ${SCRIPT_DIR}/functions/config.sh
+if [ -d "${SCRIPT_DIR}/overrides" ]; then
+  if [ -f "${SCRIPT_DIR}/overrides/config.sh" ]; then
+    source ${SCRIPT_DIR}/overrides/config.sh
+  else
+    source ${SCRIPT_DIR}/functions/config.sh
+  fi
+fi
 source ${SCRIPT_DIR}/functions/root-ca.sh
 source ${SCRIPT_DIR}/functions/intermediate-ca.sh
 source ${SCRIPT_DIR}/functions/signing-ca.sh

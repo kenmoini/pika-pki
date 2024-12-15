@@ -97,21 +97,22 @@ function selectSigningCA {
     SIGNING_CA_GLUE+=("${line}|${SIGNING_CA_COMMON_NAME}")
     SIGNING_CA_GLUE_STR="${SIGNING_CA_GLUE_STR}${line}|${SIGNING_CA_COMMON_NAME}\n"
     SIGNING_CA_COMMON_NAMES+=("${SIGNING_CA_COMMON_NAME}")
-    SIGNING_CA_COMMON_NAMES_STR+="\n$SIGNING_CA_COMMON_NAME"
+    SIGNING_CA_COMMON_NAMES_STR+="\n-|- ${SIGNING_CA_COMMON_NAME}"
   done <<< "$SIGNING_CA_DIRS"
 
   clear
   echoBanner "[${CA_TYPE}] ${CA_CN} - Signing CA Selection"
   echo "===== Path: $(getPKIPath ${CA_PATH})"
 
-  SIGNING_CA_CHOICE=$(echo -e $SIGNING_CA_COMMON_NAMES_STR | gum choose)
+  local SIGNING_CA_CHOICE=$(echo -e ${SIGNING_CA_COMMON_NAMES_STR} | gum choose)
   if [ -z "$SIGNING_CA_CHOICE" ]; then
     echo "No Signing CA selected.  Exiting..."
     exit 1
   fi
 
-  SIGNING_CA_CN=$(echo -e ${SIGNING_CA_GLUE_STR} | grep -e "|${SIGNING_CA_CHOICE}\$" | cut -d"|" -f2)
-  SIGNING_CA_DIR=$(echo -e ${SIGNING_CA_GLUE_STR} | grep -e "|${SIGNING_CA_CHOICE}\$" | cut -d"|" -f1)
+  local CLEANED_SIGNING_CA_CHOICE=$(echo ${SIGNING_CA_CHOICE} | sed 's/-|- //')
+  local SIGNING_CA_CN=$(echo -e ${SIGNING_CA_GLUE_STR} | grep -e "|${CLEANED_SIGNING_CA_CHOICE}\$" | cut -d"|" -f2)
+  local SIGNING_CA_DIR=$(echo -e ${SIGNING_CA_GLUE_STR} | grep -e "|${CLEANED_SIGNING_CA_CHOICE}\$" | cut -d"|" -f1)
 
   case "${SIGNING_CA_CHOICE}" in
     ("../ Back")

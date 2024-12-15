@@ -95,14 +95,14 @@ function selectIntermediateCA {
     INT_CA_GLUE+=("${line}|${INT_CA_COMMON_NAME}")
     INT_CA_GLUE_STR="${INT_CA_GLUE_STR}${line}|${INT_CA_COMMON_NAME}\n"
     INT_CA_COMMON_NAMES+=("${INT_CA_COMMON_NAME}")
-    INT_CA_COMMON_NAMES_STR+="\n$INT_CA_COMMON_NAME"
+    INT_CA_COMMON_NAMES_STR+="\n-|- ${INT_CA_COMMON_NAME}"
   done <<< "$INT_CA_DIRS"
 
   clear
   echoBanner "[${CA_TYPE}] ${CA_CN} - Intermediate CA Selection"
   echo "===== Path: $(getPKIPath ${CA_PATH})"
 
-  INT_CA_CHOICE=$(echo -e $INT_CA_COMMON_NAMES_STR | gum choose)
+  local INT_CA_CHOICE=$(echo -e $INT_CA_COMMON_NAMES_STR | gum choose)
   if [ -z "$INT_CA_CHOICE" ]; then
     echo "No Intermediate CA selected.  Exiting..."
     exit 1
@@ -117,8 +117,9 @@ function selectIntermediateCA {
       createNewIntermediateCA ${CA_PATH}
       ;;
     (*)
-      INT_CA_CN=$(echo -e ${INT_CA_GLUE_STR} | grep -e "|${INT_CA_CHOICE}\$" | cut -d"|" -f2)
-      INT_CA_DIR=$(echo -e ${INT_CA_GLUE_STR} | grep -e "|${INT_CA_CHOICE}\$" | cut -d"|" -f1)
+      local CLEANED_INT_CA_CHOICE=$(echo ${INT_CA_CHOICE} | sed 's/-|- //')
+      local INT_CA_CN=$(echo -e ${INT_CA_GLUE_STR} | grep -e "|${CLEANED_INT_CA_CHOICE}\$" | cut -d"|" -f2)
+      local INT_CA_DIR=$(echo -e ${INT_CA_GLUE_STR} | grep -e "|${CLEANED_INT_CA_CHOICE}\$" | cut -d"|" -f1)
 
       selectCAActions ${INT_CA_DIR}
       ;;

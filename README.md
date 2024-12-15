@@ -92,3 +92,4 @@ To override these defaults, create a folder called `overrides` in this directory
 - CA Distribution
 - Proper GitHub software releases?
 - Signing of externally generated CSRs
+- Add cool screen recording GIFs

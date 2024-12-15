@@ -49,7 +49,7 @@ function promptNewRootCAOrganization {
 }
 
 function promptNewRootCAOrganizationalUnit {
-  local ROOT_CA_ORGANIZATIONAL_UNIT=$(gum input --prompt "* Organizational Unit: " --placeholder "InfoSec" --value "${PIKA_PKI_DEFAULT_OU}")
+  local ROOT_CA_ORGANIZATIONAL_UNIT=$(gum input --prompt "* Organizational Unit: " --placeholder "InfoSec" --value "${PIKA_PKI_DEFAULT_ORGUNIT}")
   if [ -z "$ROOT_CA_ORGANIZATIONAL_UNIT" ]; then
     promptNewRootCAOrganizationalUnit
   else

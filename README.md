@@ -52,7 +52,7 @@ To override some default behavior you can override some parameters via Environme
 |----------|---------|------|
 | PIKA_PKI_DIR | `$(pwd)/.pika-pki` | By Default all assets will be created in a dot directory under the local execution directory |
 | PIKA_PKI_DEFAULT_ORG | `""` | Will provide a default answer for the questions asking for an Organization |
-| PIKA_PKI_DEFAULT_OU | `""` | Will provide a default answer for the questions asking for an Organization Unit |
+| PIKA_PKI_DEFAULT_ORGUNIT | `""` | Will provide a default answer for the questions asking for an Organization Unit |
 | PIKA_PKI_DEFAULT_COUNTRY | `""` | Will provide a default answer for the questions asking for a Country |
 | PIKA_PKI_DEFAULT_STATE | `""` | Will provide a default answer for the questions asking for a State |
 | PIKA_PKI_DEFAULT_LOCALITY | `""` | Will provide a default answer for the questions asking for a Locaity  |

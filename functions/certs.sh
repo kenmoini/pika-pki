@@ -68,7 +68,7 @@ function promptNewServerCertificateOrganization {
 }
 
 function promptNewServerCertificateOrganizationalUnit {
-  local SERVER_CERT_ORGANIZATIONAL_UNIT=$(gum input --prompt "* Organizational Unit: " --placeholder "InfoSec" --value "${PIKA_PKI_DEFAULT_OU}")
+  local SERVER_CERT_ORGANIZATIONAL_UNIT=$(gum input --prompt "* Organizational Unit: " --placeholder "InfoSec" --value "${PIKA_PKI_DEFAULT_ORGUNIT}")
   if [ -z "$SERVER_CERT_ORGANIZATIONAL_UNIT" ]; then
     promptNewServerCertificateOrganizationalUnit
   else

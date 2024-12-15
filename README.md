@@ -51,6 +51,7 @@ podman run --rm -it -v ./pika-pki:/data:Z quay.io/kenmoini/pika-pki:latest
 - Signing CAs denote the last CA in the chain - it cannot sign Certificates for a subordinate CA
 - Any CA along the chain can sign Certificates of any sort, but it's best to leave that to a Signing CA at the end of the chain
 - The Workspace directory stores all the assets for the PKI - in that directory structure you will find a `public_bundles` folder with a set of subdirectories called `certs` and `crls`.  This is where public Certificates like CA Certificates and CRLs will be stored.  You should be able to copy or symlink the path to where a web server can host those assets.
+- There is another directory called `private_bundles` in the Workspace directory - this is meant as an easily accessible place to store your Saved Certificates.
 
 ## Optional Parameters
 

@@ -36,6 +36,6 @@ echo "===== Working PKI Base Directory: ${PIKA_PKI_DIR}"
 echo "Do you want to continue with this directory?"
 gum confirm && echo -e "- Continuing...\n" || exit 1
 
-mkdir -p ${PIKA_PKI_DIR}/roots
+mkdir -p ${PIKA_PKI_DIR}/{roots,private_bundles,public_bundles/{certs,crls}}
 
 selectRootCA

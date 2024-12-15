@@ -193,7 +193,7 @@ function createNewSigningCA {
 
       openssl ca -config ${PARENT_CA_PATH}/openssl.cnf -extensions v3_signing_ca \
         -passin file:${PARENT_CA_PASS_FW} \
-        -days 1875 -notext -md sha256 \
+        -days 1875 -notext -md sha256 -batch \
         -in ${SIGNING_CA_DIR}/csr/ca.csr.pem \
         -out ${SIGNING_CA_DIR}/certs/ca.cert.pem
 

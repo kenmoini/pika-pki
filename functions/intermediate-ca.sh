@@ -188,7 +188,7 @@ function createNewIntermediateCA {
 
       openssl ca -config ${PARENT_CA_PATH}/openssl.cnf -extensions v3_intermediate_ca \
         -passin file:${PARENT_CA_PASS_FW} \
-        -days 3750 -notext -md sha256 \
+        -days 3750 -notext -md sha256 -batch \
         -in ${INTERMEDIATE_CA_DIR}/csr/ca.csr.pem \
         -out ${INTERMEDIATE_CA_DIR}/certs/ca.cert.pem
 

@@ -44,6 +44,13 @@ mkdir pika-pki
 podman run --rm -it -v ./pika-pki:/data:Z quay.io/kenmoini/pika-pki:latest
 ```
 
+## Concepts
+
+- You can create as many Root Certificate Authorities as you want
+- There can be any number of Intermediate CAs under a Root CA or other Intermediate CAs
+- Signing CAs denote the last CA in the chain - it cannot sign Certificates for a subordinate CA
+- Any CA along the chain can sign Certificates of any sort, but it's best to leave that to a Signing CA at the end of the chain
+
 ## Optional Parameters
 
 To override some default behavior you can override some parameters via Environmental Variables.
@@ -83,3 +90,4 @@ To override these defaults, create a folder called `overrides` in this directory
 - CRL Distribution
 - CA Distribution
 - Proper GitHub software releases?
+- Signing of externally generated CSRs

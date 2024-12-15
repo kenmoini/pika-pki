@@ -232,7 +232,7 @@ issuerAltName           = issuer:copy
 
 [ crl_dist ]
 # CRL Download address for the ${CA_TYPE} CA
-fullname                = URI:${CA_CRL_DIST_URI}/${CA_TYPE}-ca.${CA_SLUG}.crl
+fullname                = URI:${CA_CRL_DIST_URI}/crls/${CA_TYPE}-ca.${CA_SLUG}.crl
 
 EOF
     fi

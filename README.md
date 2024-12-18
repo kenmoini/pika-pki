@@ -66,11 +66,12 @@ To override some default behavior you can override some parameters via Environme
 | PIKA_PKI_DEFAULT_STATE | `""` | Will provide a default answer for the questions asking for a State |
 | PIKA_PKI_DEFAULT_LOCALITY | `""` | Will provide a default answer for the questions asking for a Locaity  |
 | PIKA_PKI_DEFAULT_EMAIL | `""` | Will provide a default answer for the questions asking for an email address |
+| PIKA_PKI_DEFAULT_CRL_URI_BASE | `""` | Will provide a default answer for the questions asking for a base URI for hosted CRLs |
 | PIKA_PKI_CERT_KEY_ENCRYPTION | `"false"` | By default non-CA leaf certificates do not encrypt their private keys - set to `true` to password encrypt certificate keys |
 
 ## Advanced Usage
 
-### Certificate Revokation Lists
+### Certificate Revocation Lists
 
 When creating a Certificate Authority, you will be prompted for an optional parameter, "CRL URI Root".  This is the base path where the CRL will be served for clients to query revoked certificates.
 
@@ -94,3 +95,5 @@ To override these defaults, create a folder called `overrides` in this directory
 - Proper GitHub software releases?
 - Signing of externally generated CSRs
 - Add cool screen recording GIFs
+- Add cerificate rotation
+- Add env var for allowing overwriting of certificates

@@ -1,6 +1,20 @@
 #!/bin/bash
 
-#generateOpenSSLConfFile "$CA_PATH" "$CA_CN" "$CA_SLUG" root "$CA_COUNTRY_CODE" "$CA_STATE" "$CA_CITY" "$CA_ORG" "$CA_ORG_UNIT" "$CA_EMAIL" $CA_DAYS_VALID $CA_CRL_DIST_URI
+#==============================================================================
+# generateOpenSSLConfFile - Create a new OpenSSL configuration file for a CA.
+# $1 - CA Path
+# $2 - CA Common Name
+# $3 - CA Slug
+# $4 - CA Type
+# $5 - Country Code
+# $6 - State
+# $7 - City
+# $8 - Organization
+# $9 - Organizational Unit
+# $10 - Email
+# $11 - Days Valid
+# $12 - CRL Distribution URI
+#==============================================================================
 function generateOpenSSLConfFile {
   local CA_PATH=${1}
   local CA_CN=${2}
@@ -69,7 +83,7 @@ EOF
 countryName             = supplied
 stateOrProvinceName     = supplied
 localityName            = supplied
-organizationName        = match
+organizationName        = supplied
 organizationalUnitName  = optional
 commonName              = supplied
 emailAddress            = supplied

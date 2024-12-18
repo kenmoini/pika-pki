@@ -67,7 +67,7 @@ function promptNewRootCAEmail {
 }
 
 function promptNewRootCACRLURL {
-  local ROOT_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI Root: " --placeholder "https://acme.com/pki/crl")
+  local ROOT_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI Root: " --placeholder "https://acme.com/pki/crl" --value "${PIKA_PKI_DEFAULT_CRL_URI_BASE}")
   echo ${ROOT_CA_CRL_DIST_URI}
 }
 
@@ -85,7 +85,7 @@ function selectRootCA {
   local ROOT_CA_COMMON_NAME=""
   local ROOT_CA_GLUE=()
   local ROOT_CA_GLUE_STR=''
-  local ROOT_CA_COMMON_NAMES_STR="[+] Create a new Root CA"
+  local ROOT_CA_COMMON_NAMES_STR="[x] Exit"
   local ROOT_CA_COMMON_NAMES=()
 
   while IFS= read -r line; do
@@ -100,12 +100,12 @@ function selectRootCA {
     ROOT_CA_COMMON_NAMES_STR+='\n-|- '${ROOT_CA_COMMON_NAME}
   done <<< "$ROOT_CA_DIRS"
 
-  ROOT_CA_COMMON_NAMES_STR=${ROOT_CA_COMMON_NAMES_STR}'\n[x] Exit'
+  ROOT_CA_COMMON_NAMES_STR=${ROOT_CA_COMMON_NAMES_STR}'\n[+] Create a new Root CA'
 
   clear
   echoBanner "Root CA Selection"
 
-  local ROOT_CA_CHOICE=$(echo -e ${ROOT_CA_COMMON_NAMES_STR} | gum choose)
+  local ROOT_CA_CHOICE=$(echo -e "${ROOT_CA_COMMON_NAMES_STR}" | gum choose)
   if [ -z "$ROOT_CA_CHOICE" ]; then
     echo "No Root CA selected.  Exiting..."
     exit 1

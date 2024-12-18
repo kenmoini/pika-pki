@@ -6,6 +6,12 @@
 #  exit 1
 #}
 
+#==============================================================================
+# generatePrivateKey - Generate a private key at a given path
+# $1 - Key Path
+# $2 - Type (default: "") [Certificate, Root CA, Intermediate CA, Signing CA]
+# $3 - Bit Length (default: 4096)
+#==============================================================================
 function generatePrivateKey {
   local KEY_PATH=${1}
   local TYPE=${2:-""}
@@ -13,11 +19,11 @@ function generatePrivateKey {
   local PW_FILE=$(mktemp)
 
   if [ ! -f ${KEY_PATH} ]; then
-    echo "- No private key found, creating now..."
+    echo "- Generating private key..."
     if [ "${TYPE}" == "Certificate" ] && [ "false" == "${PIKA_PKI_CERT_KEY_ENCRYPTION}" ]; then
       openssl genrsa -out ${KEY_PATH} ${BIT_LENGTH}
     else
-      KEY_PASS=$(gum input --password --prompt "Enter a password for the ${TYPE} private key: ")
+      local KEY_PASS=$(gum input --password --prompt "Enter a password for the ${TYPE} private key: ")
       echo ${KEY_PASS} > ${PW_FILE}
 
       openssl genrsa -aes256 -passout file:${PW_FILE} -out ${KEY_PATH} ${BIT_LENGTH}
@@ -29,21 +35,27 @@ function generatePrivateKey {
   fi
 }
 
+#==============================================================================
+# echoBanner - Echo a banner with the current workspace and some text
+# $1 - CA Path
+#==============================================================================
 function echoBanner {
-  local PKI_PATH=${1}
-  echo "===== Workspace: ${PIKA_PKI_DIR} - ${PKI_PATH}"
+  local INPUT_TEXT=${1}
+  echo "===== Workspace: ${PIKA_PKI_DIR} - ${INPUT_TEXT}"
 }
 
-function getBannerPath {
-  local CA_PATH=${1}
-  local CA_CN=$(getCertificateCommonName "${CA_PATH}/certs/ca.cert.pem")
-  echo $CA_CN
-}
-
+#==============================================================================
+# getCertificateCommonName - Get the Common Name (CN) for a given certificate
+#==============================================================================
 function getCertificateCommonName {
-  openssl x509 -noout -subject -in ${1} -nameopt multiline | awk -F' = ' '/commonName/ {print $2}'
+  local CERT_PATH=${1}
+  openssl x509 -noout -subject -in ${CERT_PATH} -nameopt multiline | awk -F' = ' '/commonName/ {print $2}'
 }
 
+#==============================================================================
+# createCommonCAAssets - Create common assets for a CA eg. directories, files
+# $1 - CA Path
+#==============================================================================
 function createCommonCAAssets {
   local CA_PATH=${1}
   local TYPE=${2:-""}
@@ -64,15 +76,23 @@ function createCommonCAAssets {
   [ ! -f ${CA_PATH}/crlnumber ] && echo 1000 > ${CA_PATH}/crlnumber
 }
 
+#==============================================================================
+# getCAParentPath - Get the parent path for a given CA path
+# $1 - CA Path
+#==============================================================================
 function getCAParentPath {
-  local ACTIVE_CA_PATH=${1}
-  local PARENT_PATH=$(dirname $(dirname ${ACTIVE_CA_PATH}))
+  local CA_PATH=${1}
+  local PARENT_PATH=$(dirname $(dirname ${CA_PATH}))
   echo $PARENT_PATH
 }
 
+#==============================================================================
+# getCAType - Get the type of CA based on the path
+# $1 - CA Path
+#==============================================================================
 function getCAType {
-  local ACTIVE_CA_PATH=${1}
-  local PARENT_PATH=$(basename $(dirname ${ACTIVE_CA_PATH}))
+  local CA_PATH=${1}
+  local PARENT_PATH=$(basename $(dirname ${CA_PATH}))
   case "${PARENT_PATH}" in
     "roots")
       echo "Root"
@@ -86,15 +106,27 @@ function getCAType {
   esac
 }
 
+#==============================================================================
+# getPKIPath - Get the PKI path for a given CA
+# $1 - CA Path
+# Assuming the normal directory structure:
+# /roots/{$ROOT_CA}/${intermediate-ca/${INTERMEDIATE_CA}...N}/signing-ca/${SIGNING_CA}
+# This function will return the path in a human-readable format:
+# $ROOT_CA > $INTERMEDIATE_CA ...N > $SIGNING_CA
+#==============================================================================
 function getPKIPath {
-  local ACTIVE_CA_PATH=${1}
-  local BASE_PATH=$(sed 's|'$PIKA_PKI_DIR'/||g' <<< ${ACTIVE_CA_PATH})
+  local CA_PATH=${1}
+  local BASE_PATH=$(sed 's|'$PIKA_PKI_DIR'/||g' <<< ${CA_PATH})
   local ROOT=$(sed 's|roots/||' <<< ${BASE_PATH})
   local INTERMEDIATE=$(sed 's|/intermediate-ca/| > |' <<< ${ROOT})
   local SIGNING=$(sed 's|/signing-ca/| > |' <<< ${INTERMEDIATE})
   echo $SIGNING
 }
 
+#==============================================================================
+# selectCAActions - Select the actions for a given CA
+# $1 - CA Path
+#==============================================================================
 function selectCAActions {
   local ACTIVE_CA_PATH=${1}
   local CA_TYPE=$(getCAType ${ACTIVE_CA_PATH})
@@ -111,8 +143,8 @@ function selectCAActions {
   local CA_ACTIONS='../ Back\n[+] Certificates ('$CERTIFICATE_COUNT')'
   
   clear
-  echoBanner "[${CA_TYPE}] $(getBannerPath "${ACTIVE_CA_PATH}")"
-  echo "===== Path: $(getPKIPath ${ACTIVE_CA_PATH})"
+  echoBanner "[${CA_TYPE}] $(getCertificateCommonName ${ACTIVE_CA_PATH}/certs/ca.cert.pem)"
+  echo "===== CA Path: $(getPKIPath ${ACTIVE_CA_PATH})"
 
   if [ "$CA_TYPE" != "Signing" ]; then
     local INTERMEDIATE_CA_DIRS=$(find ${ACTIVE_CA_PATH}/intermediate-ca/ -maxdepth 1 -type d -printf '%p\n' | grep -ve "^${ACTIVE_CA_PATH}/intermediate-ca/$")
@@ -122,7 +154,7 @@ function selectCAActions {
     CA_ACTIONS=${CA_ACTIONS}'\n[+] Intermediate CAs ('$INTERMEDIATE_CA_COUNT')\n[+] Signing CAs ('$SIGNING_CA_COUNT')'
   fi
 
-  local SELECTED_ACTION=$(echo -e $CA_ACTIONS | gum choose)
+  local SELECTED_ACTION=$(echo -e "${CA_ACTIONS}" | gum choose)
   if [ -z "$SELECTED_ACTION" ]; then
     echo "No action selected, exiting..."
     exit 1
@@ -152,8 +184,10 @@ function selectCAActions {
   esac
 }
 
+#==============================================================================
 # certificateSelectionScreen displays a list of certificates for a CA and allows the user to select one for further actions.
 # $1 - CA Path
+#==============================================================================
 function certificateSelectionScreen {
   local CA_PATH=${1}
   local CA_TYPE=$(getCAType ${CA_PATH})
@@ -164,10 +198,11 @@ function certificateSelectionScreen {
   fi
 
   clear
-  echoBanner "[${CA_TYPE}] $(getBannerPath "${CA_PATH}") - Certificate Selection"
-  echo "===== Path: $(getPKIPath ${CA_PATH})"
+  #echoBanner "[${CA_TYPE}] $(getBannerPath "${CA_PATH}") - Certificate Selection"
+  echoBanner "[${CA_TYPE}] $(getCertificateCommonName ${ACTIVE_CA_PATH}/certs/ca.cert.pem) - Certificate Selection"
+  echo "===== CA Path: $(getPKIPath ${CA_PATH})"
   
-  local SELECTED_ACTION=$(echo -e $CERT_OPTIONS | gum choose)
+  local SELECTED_ACTION=$(echo -e "${CERT_OPTIONS}" | gum choose)
   if [ -z "$SELECTED_ACTION" ]; then
     echo "No action selected, exiting..."
     exit 1
@@ -182,12 +217,13 @@ function certificateSelectionScreen {
       ;;
     *)
       clear
-      selectCertificateActions "${CA_PATH}/certs/${SELECTED_ACTION}.cert.pem"
+      viewCertificate "${CA_PATH}/certs/${SELECTED_ACTION}.cert.pem"
       ;;
   esac
 
 }
 
+#==============================================================================
 # generateCAChain generates a certificate chain for any given certificate
 # $1 - Certificate Path
 # $2 - Include Root (default: false)
@@ -207,6 +243,7 @@ function certificateSelectionScreen {
 # [Root Certificate]
 # -----END CERTIFICATE-----
 #
+#==============================================================================
 function generateCAChain {
   local CERT_PATH=${1} # /path/to/pki/roots/ca/intermediate-ca/int/certs/ca.cert.pem
   local INCLUDE_ROOT=${2:-"false"}
@@ -232,8 +269,10 @@ function generateCAChain {
   echo -e "${CHAIN_PEM}"
 }
 
+#==============================================================================
 # isCertificateAuthority checks if a certificate is a Certificate Authority.
 # $1 - Certificate Path
+#==============================================================================
 function isCertificateAuthority {
   local CERT_PATH=${1}
   local IS_CA=$(openssl x509 -noout -text -in ${CERT_PATH} | grep -e "CA:TRUE")
@@ -244,6 +283,10 @@ function isCertificateAuthority {
   fi
 }
 
+#==============================================================================
+# getRootCAPath - Get the Root CA for any given certificate
+# $1 - Certificate Path
+#==============================================================================
 function getRootCAPath {
   local CERT_PATH=${1}
   local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
@@ -257,10 +300,15 @@ function getRootCAPath {
   fi
 }
 
+
+#==============================================================================
+# createCRLFile - Create a Certificate Revocation List (CRL) for a CA
+# $1 - CA base Directory
+#==============================================================================
 function createCRLFile {
   local CA_DIR=${1}
   if [ ! -f ${CA_DIR}/crl/ca.crl.pem ]; then
-    echo "- No CRL found, creating now..."
+    echo "- Creating Certificate Revocation List..."
     openssl ca -config ${CA_DIR}/openssl.cnf -gencrl -out ${CA_DIR}/crl/ca.crl.pem
   else
     echo "- CRL already exists: ${CA_DIR}/crl/ca.crl.pem"

@@ -15,7 +15,7 @@ function promptNewSigningCAName {
 }
 
 function promptNewSigningCACountryCode {
-  local SIGNING_CA_COUNTRY_CODE=$(gum input --prompt "* Country Code: " --placeholder "US")
+  local SIGNING_CA_COUNTRY_CODE=$(gum input --prompt "* Country Code: " --placeholder "US" --value "${PIKA_PKI_DEFAULT_COUNTRY}")
   if [ -z "$SIGNING_CA_COUNTRY_CODE" ]; then
     promptNewSigningCACountryCode
   else
@@ -24,7 +24,7 @@ function promptNewSigningCACountryCode {
 }
 
 function promptNewSigningCAState {
-  local SIGNING_CA_STATE=$(gum input --prompt "* State: " --placeholder "California")
+  local SIGNING_CA_STATE=$(gum input --prompt "* State: " --placeholder "California" --value "${PIKA_PKI_DEFAULT_STATE}")
   if [ -z "$SIGNING_CA_STATE" ]; then
     promptNewSigningCAState
   else
@@ -33,7 +33,7 @@ function promptNewSigningCAState {
 }
 
 function promptNewSigningCALocality {
-  local SIGNING_CA_LOCALITY=$(gum input --prompt "* City/Locality: " --placeholder "San Francisco")
+  local SIGNING_CA_LOCALITY=$(gum input --prompt "* City/Locality: " --placeholder "San Francisco" --value "${PIKA_PKI_DEFAULT_LOCALITY}")
   if [ -z "$SIGNING_CA_LOCALITY" ]; then
     promptNewSigningCALocality
   else
@@ -42,7 +42,7 @@ function promptNewSigningCALocality {
 }
 
 function promptNewSigningCAOrganization {
-  local SIGNING_CA_ORGANIZATION=$(gum input --prompt "* Organization: " --placeholder "ACME Corporation")
+  local SIGNING_CA_ORGANIZATION=$(gum input --prompt "* Organization: " --placeholder "ACME Corporation" --value "${PIKA_PKI_DEFAULT_ORG}")
   if [ -z "$SIGNING_CA_ORGANIZATION" ]; then
     promptNewSigningCAOrganization
   else
@@ -51,7 +51,7 @@ function promptNewSigningCAOrganization {
 }
 
 function promptNewSigningCAOrganizationalUnit {
-  local SIGNING_CA_ORGANIZATIONAL_UNIT=$(gum input --prompt "* Organizational Unit: " --placeholder "InfoSec")
+  local SIGNING_CA_ORGANIZATIONAL_UNIT=$(gum input --prompt "* Organizational Unit: " --placeholder "InfoSec" --value "${PIKA_PKI_DEFAULT_ORGUNIT}")
   if [ -z "$SIGNING_CA_ORGANIZATIONAL_UNIT" ]; then
     promptNewSigningCAOrganizationalUnit
   else
@@ -60,7 +60,7 @@ function promptNewSigningCAOrganizationalUnit {
 }
 
 function promptNewSigningCAEmail {
-  local SIGNING_CA_EMAIL=$(gum input --prompt "* Email: " --placeholder "you@acme.com")
+  local SIGNING_CA_EMAIL=$(gum input --prompt "* Email: " --placeholder "you@acme.com" --value "${PIKA_PKI_DEFAULT_EMAIL}")
   if [ -z "$SIGNING_CA_EMAIL" ]; then
     promptNewSigningCAEmail
   else
@@ -69,7 +69,7 @@ function promptNewSigningCAEmail {
 }
 
 function promptNewSigningCACRLURL {
-  local SIGNING_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI Root: " --placeholder "https://acme.com/pki/crl")
+  local SIGNING_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI Root: " --placeholder "https://acme.com/pki/crl" --value "${PIKA_PKI_DEFAULT_CRL_URI_BASE}")
   echo ${SIGNING_CA_CRL_DIST_URI}
 }
 
@@ -102,9 +102,9 @@ function selectSigningCA {
 
   clear
   echoBanner "[${CA_TYPE}] ${CA_CN} - Signing CA Selection"
-  echo "===== Path: $(getPKIPath ${CA_PATH})"
+  echo "===== CA Path: $(getPKIPath ${CA_PATH})"
 
-  local SIGNING_CA_CHOICE=$(echo -e ${SIGNING_CA_COMMON_NAMES_STR} | gum choose)
+  local SIGNING_CA_CHOICE=$(echo -e "${SIGNING_CA_COMMON_NAMES_STR}" | gum choose)
   if [ -z "$SIGNING_CA_CHOICE" ]; then
     echo "No Signing CA selected.  Exiting..."
     exit 1

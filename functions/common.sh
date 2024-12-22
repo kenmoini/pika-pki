@@ -382,7 +382,7 @@ function selectCAActions {
   case "$SELECTED_ACTION" in
     "../ Back")
       if [ "${IS_ROOT_CA}" == "true" ]; then
-        selectRootCA
+        selectRootCAScreen
       else
         selectCAActions $(getCAParentPath ${ACTIVE_CA_PATH})
       fi

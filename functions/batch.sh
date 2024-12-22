@@ -113,6 +113,7 @@ function batchEntrypoint {
       for ROOT_CA_DIR in $(find ${PIKA_PKI_DIR}/roots/ -maxdepth 1 -type d -printf '%p\n' | grep -ve "^${PIKA_PKI_DIR}/roots/$"); do
         processCAChainPublicBundles ${ROOT_CA_DIR}
       done
+      tree ${PIKA_PKI_DIR}/public_bundles
       ;;
     "signCSR")
       # Fail if no authority

@@ -101,7 +101,75 @@ export PIKA_PKI_DEFAULT_CRL_URI_BASE="https://pki.kemo.network/crls"
 ./pika-pki.sh
 ```
 
-## Directory Structure and Common Files
+---
+
+## Advanced Usage
+
+### Copying Public Bundle Assets
+
+When serving your PKI, you'll often need to distribute things such as CA Certificates and CRLs.  After starting Pika PKI, there will be a few directories created - one being `public_bundles/{certs,crls}`.
+
+By starting Pika PKI with `./pika-pki.sh -m copyBundles`, the application will copy the public bundles of all managed Certificate Authorities to that directory which can then be served easily with a web server of choice.  Public bundles include things such as each Certificate Authority's Certificate, CA Chain - with and without root in a full-chain - and Certificate Revocation List (CRL).
+
+Whenever rotating a CRL, the public bundle of that CRL's CA will also be freshly copied to update the CRL file.
+
+The file format when copied is `${CA_TYPE}-ca.{$CA_CN_SLUG}.{cert.pem|crl}` where `$CA_TYPE` can be `root`, `intermediate`, or `signing`.
+
+The value for `$CA_CN_SLUG` comes from a "slugified" (alpha-num only, space/other characters replaced with a dash) value of the Certificate Authority's Common Name.  This value is also represented in the CA's folder name along the path, eg `kemo-intermediate-ca` in `roots/kemo-root-ca/intermediate-ca/kemo-intermediate-ca`.
+
+The generation of these Public Bundle assets means you can serve them from a web server for easy distribution of your PKI chain and CRLs.  An example of this would be with something like with Podman to serve it via an Nginx server:
+
+```bash
+# Start the nginx container
+podman run -it --rm -d -p 8085:80 \
+ -v .pika-pki/public_bundles:/usr/share/nginx/html/pki-pub:Z \
+ docker.io/nginx
+
+# or - Start the nginx container with directory listeing enabled
+
+echo 'server {listen 80; server_name localhost; location / { root /usr/share/nginx/html; index index.html index.htm; autoindex on; autoindex_exact_size off; }}' > nginx-default.conf
+
+podman run -it --rm -d -p 8085:80 \
+ -v .pika-pki/public_bundles:/usr/share/nginx/html/pki-pub:Z \
+ -v ./nginx-default.conf:/etc/nginx/conf.d/default.conf:Z \
+ docker.io/nginx
+```
+
+Once you run that command you can access your Public Bundle files from `http://localhost:8085/pki-pub/`.  You could easily place this behind a reverse proxy and modify the access and routing.
+
+### Certificate Revocation Lists (CRL)
+
+When creating a Certificate Authority, you will be prompted for an optional parameter, "CRL URI Root".  This is the base path where the CRL will be served for clients to query revoked certificates.
+
+You should provide the base URI to where a public server is available - eg if you provide `https://ca.example.com/public` then the CRL will be configured and presented as `https://ca.example.com/public/crls/root-ca.my-root-ca.crl`.
+
+The format is `${URI_ROOT}/pki-pub/crls/${CA_TYPE}-ca.${CA_CN_SLUG}.crl` where `$CA_TYPE` can be `root`, `intermediate`, or `signing`.
+
+The value for `$CA_CN_SLUG` comes from a "slugified" (alpha-num only, space/other characters replaced with a dash) value of the Certificate Authority's Common Name.  This value is also represented in the CA's folder name along the path, eg `kemo-signing-ca` in `roots/kemo-root-ca/intermediate-ca/kemo-intermediate-ca/signing-ca/kemo-signing-ca`.
+
+If you'd like the CRL to be hosted on a different path, then modify the default OpenSSL Configuration - see below for instructions on that.
+
+### Rotating/Renewing Certificate Revocation Lists
+
+By default a Certificate Authority is configured for a 30 day long CRL, which can be changed in the OpenSSL configuration with an override detailed below, or after the CA is created by modifying the `openssl.cnf` file in the CA directory.
+
+This should be rotated regularly before whatever that expiration is.
+
+To do so easily, you can execute `./pika-pki.sh -m rotateCRL -a path/to/ca -p passwordOrPathToPasswordFile`.
+
+The `-m rotateCRL` option will process a CRL rotation/renewal - this is done on a per-CA basis by specifying `-a path/to/ca` eg `-a .pika-pki/roots/kemo-root/intermediate-ca/kemo-intermediate`.
+
+Since the CRLs have to be signed by the CA Private Key, the password is needed to be provided - do this with `-p passwordOrPathToPasswordFile` which, can either be the password plain text, or a path to a file with the password in it.
+
+### Overriding OpenSSL Configuration
+
+The default configuration can be found in `functions/config.sh`.  There is some logic and templating involved which is why it is embedded in a Bash script.
+
+To override these defaults, create a folder called `overrides` in this directory, copy the `functions/config.sh` file into it, and modify as needed.
+
+---
+
+## Boring Things - Directory Structure and Common Files
 
 In order for Pika PKI to work, there has to be a standard naming convention and directory structure.  With this information you could technically import any other PKI into a Pika PKI file structure and use its interface - *if that were your thing*.
 
@@ -180,69 +248,7 @@ roots/other-root-ca/intermediate-ca/other-intermediate-ca-1/signing-ca/other-sig
 - Each Root and Intermediate CA has `intermediate-ca` and `signing-ca` sub folders - Signing CAs do not since they are the end of the chain.
 - CA Folder names are based on a "sluggified" version of the CA Common Name
 
-## Advanced Usage
-
-### Copying Public Bundle Assets
-
-When serving your PKI, you'll often need to distribute things such as CA Certificates and CRLs.  After starting Pika PKI, there will be a few directories created - one being `public_bundles/{certs,crls}`.
-
-By starting Pika PKI with `./pika-pki.sh -m copyBundles`, the application will copy the public bundles of all managed Certificate Authorities to that directory which can then be served easily with a web server of choice.  Public bundles include things such as each Certificate Authority's Certificate, CA Chain - with and without root in a full-chain - and Certificate Revocation List (CRL).
-
-Whenever rotating a CRL, the public bundle of that CRL's CA will also be freshly copied to update the CRL file.
-
-The file format when copied is `${CA_TYPE}-ca.{$CA_CN_SLUG}.{cert.pem|crl}` where `$CA_TYPE` can be `root`, `intermediate`, or `signing`.
-
-The value for `$CA_CN_SLUG` comes from a "slugified" (alpha-num only, space/other characters replaced with a dash) value of the Certificate Authority's Common Name.  This value is also represented in the CA's folder name along the path, eg `kemo-intermediate-ca` in `roots/kemo-root-ca/intermediate-ca/kemo-intermediate-ca`.
-
-The generation of these Public Bundle assets means you can serve them from a web server for easy distribution of your PKI chain and CRLs.  An example of this would be with something like with Podman to serve it via an Nginx server:
-
-```bash
-# Start the nginx container
-podman run -it --rm -d -p 8085:80 \
- -v .pika-pki/public_bundles:/usr/share/nginx/html/pki-pub:Z \
- docker.io/nginx
-
-# or - Start the nginx container with directory listeing enabled
-
-echo 'server {listen 80; server_name localhost; location / { root /usr/share/nginx/html; index index.html index.htm; autoindex on; autoindex_exact_size off; }}' > nginx-default.conf
-
-podman run -it --rm -d -p 8085:80 \
- -v .pika-pki/public_bundles:/usr/share/nginx/html/pki-pub:Z \
- -v ./nginx-default.conf:/etc/nginx/conf.d/default.conf:Z \
- docker.io/nginx
-```
-
-Once you run that command you can access your Public Bundle files from `http://localhost:8085/pki-pub/`.  You could easily place this behind a reverse proxy and modify the access and routing.
-
-### Certificate Revocation Lists (CRL)
-
-When creating a Certificate Authority, you will be prompted for an optional parameter, "CRL URI Root".  This is the base path where the CRL will be served for clients to query revoked certificates.
-
-You should provide the base URI to where a public server is available - eg if you provide `https://ca.example.com/public` then the CRL will be configured and presented as `https://ca.example.com/public/crls/root-ca.my-root-ca.crl`.
-
-The format is `${URI_ROOT}/pki-pub/crls/${CA_TYPE}-ca.${CA_CN_SLUG}.crl` where `$CA_TYPE` can be `root`, `intermediate`, or `signing`.
-
-The value for `$CA_CN_SLUG` comes from a "slugified" (alpha-num only, space/other characters replaced with a dash) value of the Certificate Authority's Common Name.  This value is also represented in the CA's folder name along the path, eg `kemo-signing-ca` in `roots/kemo-root-ca/intermediate-ca/kemo-intermediate-ca/signing-ca/kemo-signing-ca`.
-
-If you'd like the CRL to be hosted on a different path, then modify the default OpenSSL Configuration - see below for instructions on that.
-
-### Rotating/Renewing Certificate Revocation Lists
-
-By default a Certificate Authority is configured for a 30 day long CRL, which can be changed in the OpenSSL configuration with an override detailed below, or after the CA is created by modifying the `openssl.cnf` file in the CA directory.
-
-This should be rotated regularly before whatever that expiration is.
-
-To do so easily, you can execute `./pika-pki.sh -m rotateCRL -a path/to/ca -p passwordOrPathToPasswordFile`.
-
-The `-m rotateCRL` option will process a CRL rotation/renewal - this is done on a per-CA basis by specifying `-a path/to/ca` eg `-a .pika-pki/roots/kemo-root/intermediate-ca/kemo-intermediate`.
-
-Since the CRLs have to be signed by the CA Private Key, the password is needed to be provided - do this with `-p passwordOrPathToPasswordFile` which, can either be the password plain text, or a path to a file with the password in it.
-
-### Overriding OpenSSL Configuration
-
-The default configuration can be found in `functions/config.sh`.  There is some logic and templating involved which is why it is embedded in a Bash script.
-
-To override these defaults, create a folder called `overrides` in this directory, copy the `functions/config.sh` file into it, and modify as needed.
+---
 
 ## TODO
 

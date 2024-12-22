@@ -115,13 +115,33 @@ The file format when copied is `${CA_TYPE}-ca.{$CA_CN_SLUG}.{cert.pem|crl}` wher
 
 The value for `$CA_CN_SLUG` comes from a "slugified" (alpha-num only, space/other characters replaced with a dash) value of the Certificate Authority's Common Name.  This value is also represented in the CA's folder name along the path, eg `kemo-intermediate-ca` in `roots/kemo-root-ca/intermediate-ca/kemo-intermediate-ca`.
 
+The generation of these Public Bundle assets means you can serve them from a web server for easy distribution of your PKI chain and CRLs.  An example of this would be with something like with Podman to serve it via an Nginx server:
+
+```bash
+# Start the nginx container
+podman run -it --rm -d -p 8085:80 \
+ -v .pika-pki/public_bundles:/usr/share/nginx/html/pki-pub:Z \
+ docker.io/nginx
+
+# or - Start the nginx container with directory listeing enabled
+
+echo 'server {listen 80; server_name localhost; location / { root /usr/share/nginx/html; index index.html index.htm; autoindex on; autoindex_exact_size off; }}' > nginx-default.conf
+
+podman run -it --rm -d -p 8085:80 \
+ -v .pika-pki/public_bundles:/usr/share/nginx/html/pki-pub:Z \
+ -v ./nginx-default.conf:/etc/nginx/conf.d/default.conf:Z \
+ docker.io/nginx
+```
+
+Once you run that command you can access your Public Bundle files from `http://localhost:8085/pki-pub/`.  You could easily place this behind a reverse proxy and modify the access and routing.
+
 ### Certificate Revocation Lists (CRL)
 
 When creating a Certificate Authority, you will be prompted for an optional parameter, "CRL URI Root".  This is the base path where the CRL will be served for clients to query revoked certificates.
 
 You should provide the base URI to where a public server is available - eg if you provide `https://ca.example.com/public` then the CRL will be configured and presented as `https://ca.example.com/public/crls/root-ca.my-root-ca.crl`.
 
-The format is `${URI_ROOT}/crls/${CA_TYPE}-ca.${CA_CN_SLUG}.crl` where `$CA_TYPE` can be `root`, `intermediate`, or `signing`.
+The format is `${URI_ROOT}/pki-pub/crls/${CA_TYPE}-ca.${CA_CN_SLUG}.crl` where `$CA_TYPE` can be `root`, `intermediate`, or `signing`.
 
 The value for `$CA_CN_SLUG` comes from a "slugified" (alpha-num only, space/other characters replaced with a dash) value of the Certificate Authority's Common Name.  This value is also represented in the CA's folder name along the path, eg `kemo-signing-ca` in `roots/kemo-root-ca/intermediate-ca/kemo-intermediate-ca/signing-ca/kemo-signing-ca`.
 
@@ -147,6 +167,5 @@ To override these defaults, create a folder called `overrides` in this directory
 
 ## TODO
 
-- Proper GitHub software releases?
 - Add cool screen recording GIFs
-- Add CA Operational Commands
+- Add CA Operational Commands to menu

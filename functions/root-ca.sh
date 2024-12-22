@@ -2,75 +2,7 @@
 
 source ${SCRIPT_DIR}/functions/formatting.sh
 source ${SCRIPT_DIR}/functions/common.sh
-
-function promptNewRootCAName {
-  local ROOT_CA_NAME=$(gum input --prompt "* Root CA [Common] Name: " --placeholder "ACME Root Certificate Authority")
-  if [ -z "$ROOT_CA_NAME" ]; then
-    promptNewRootCAName
-  else
-    echo ${ROOT_CA_NAME}
-  fi
-}
-
-function promptNewRootCACountryCode {
-  local ROOT_CA_COUNTRY_CODE=$(gum input --prompt "* Country Code: " --placeholder "US" --value "${PIKA_PKI_DEFAULT_COUNTRY}")
-  if [ -z "$ROOT_CA_COUNTRY_CODE" ]; then
-    promptNewRootCACountryCode
-  else
-    echo ${ROOT_CA_COUNTRY_CODE}
-  fi
-}
-
-function promptNewRootCAState {
-  local ROOT_CA_STATE=$(gum input --prompt "* State: " --placeholder "California" --value "${PIKA_PKI_DEFAULT_STATE}")
-  if [ -z "$ROOT_CA_STATE" ]; then
-    promptNewRootCAState
-  else
-    echo ${ROOT_CA_STATE}
-  fi
-}
-
-function promptNewRootCALocality {
-  local ROOT_CA_LOCALITY=$(gum input --prompt "* City/Locality: " --placeholder "San Francisco" --value "${PIKA_PKI_DEFAULT_LOCALITY}")
-  if [ -z "$ROOT_CA_LOCALITY" ]; then
-    promptNewRootCALocality
-  else
-    echo ${ROOT_CA_LOCALITY}
-  fi
-}
-
-function promptNewRootCAOrganization {
-  local ROOT_CA_ORGANIZATION=$(gum input --prompt "* Organization: " --placeholder "ACME Corporation" --value "${PIKA_PKI_DEFAULT_ORG}")
-  if [ -z "$ROOT_CA_ORGANIZATION" ]; then
-    promptNewRootCAOrganization
-  else
-    echo ${ROOT_CA_ORGANIZATION}
-  fi
-}
-
-function promptNewRootCAOrganizationalUnit {
-  local ROOT_CA_ORGANIZATIONAL_UNIT=$(gum input --prompt "* Organizational Unit: " --placeholder "InfoSec" --value "${PIKA_PKI_DEFAULT_ORGUNIT}")
-  if [ -z "$ROOT_CA_ORGANIZATIONAL_UNIT" ]; then
-    promptNewRootCAOrganizationalUnit
-  else
-    echo ${ROOT_CA_ORGANIZATIONAL_UNIT}
-  fi
-}
-
-function promptNewRootCAEmail {
-  local ROOT_CA_EMAIL=$(gum input --prompt "* Email: " --placeholder "you@acme.com" --value "${PIKA_PKI_DEFAULT_EMAIL}")
-  if [ -z "$ROOT_CA_EMAIL" ]; then
-    promptNewRootCAEmail
-  else
-    echo ${ROOT_CA_EMAIL}
-  fi
-}
-
-function promptNewRootCACRLURL {
-  local ROOT_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI Root: " --placeholder "https://acme.com/pki/crl" --value "${PIKA_PKI_DEFAULT_CRL_URI_BASE}")
-  echo ${ROOT_CA_CRL_DIST_URI}
-}
-
+source ${SCRIPT_DIR}/functions/prompts.ca.sh
 
 function selectRootCA {
   local ROOT_CA_DIRS=$(find ${PIKA_PKI_DIR}/roots/ -maxdepth 1 -type d -printf '%p\n' | grep -ve "^${PIKA_PKI_DIR}/roots/$")

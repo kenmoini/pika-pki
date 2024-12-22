@@ -4,76 +4,9 @@ shopt -s extglob;
 
 source ${SCRIPT_DIR}/functions/formatting.sh
 source ${SCRIPT_DIR}/functions/common.sh
+source ${SCRIPT_DIR}/functions/prompts.ca.sh
 
-function promptNewIntermediateCAName {
-  local INTERMEDIATE_CA_NAME=$(gum input --prompt "* Intermediate CA [Common] Name: " --placeholder "ACME Intermediate Certificate Authority")
-  if [ -z "$INTERMEDIATE_CA_NAME" ]; then
-    promptNewIntermediateCAName
-  else
-    echo ${INTERMEDIATE_CA_NAME}
-  fi
-}
-
-function promptNewIntermediateCACountryCode {
-  local INTERMEDIATE_CA_COUNTRY_CODE=$(gum input --prompt "* Country Code: " --placeholder "US" --value "${PIKA_PKI_DEFAULT_COUNTRY}")
-  if [ -z "$INTERMEDIATE_CA_COUNTRY_CODE" ]; then
-    promptNewIntermediateCACountryCode
-  else
-    echo ${INTERMEDIATE_CA_COUNTRY_CODE}
-  fi
-}
-
-function promptNewIntermediateCAState {
-  local INTERMEDIATE_CA_STATE=$(gum input --prompt "* State: " --placeholder "California" --value "${PIKA_PKI_DEFAULT_STATE}")
-  if [ -z "$INTERMEDIATE_CA_STATE" ]; then
-    promptNewIntermediateCAState
-  else
-    echo ${INTERMEDIATE_CA_STATE}
-  fi
-}
-
-function promptNewIntermediateCALocality {
-  local INTERMEDIATE_CA_LOCALITY=$(gum input --prompt "* City/Locality: " --placeholder "San Francisco" --value "${PIKA_PKI_DEFAULT_LOCALITY}")
-  if [ -z "$INTERMEDIATE_CA_LOCALITY" ]; then
-    promptNewIntermediateCALocality
-  else
-    echo ${INTERMEDIATE_CA_LOCALITY}
-  fi
-}
-
-function promptNewIntermediateCAOrganization {
-  local INTERMEDIATE_CA_ORGANIZATION=$(gum input --prompt "* Organization: " --placeholder "ACME Corporation" --value "${PIKA_PKI_DEFAULT_ORG}")
-  if [ -z "$INTERMEDIATE_CA_ORGANIZATION" ]; then
-    promptNewIntermediateCAOrganization
-  else
-    echo ${INTERMEDIATE_CA_ORGANIZATION}
-  fi
-}
-
-function promptNewIntermediateCAOrganizationalUnit {
-  local INTERMEDIATE_CA_ORGANIZATIONAL_UNIT=$(gum input --prompt "* Organizational Unit: " --placeholder "InfoSec" --value "${PIKA_PKI_DEFAULT_ORGUNIT}")
-  if [ -z "$INTERMEDIATE_CA_ORGANIZATIONAL_UNIT" ]; then
-    promptNewIntermediateCAOrganizationalUnit
-  else
-    echo ${INTERMEDIATE_CA_ORGANIZATIONAL_UNIT}
-  fi
-}
-
-function promptNewIntermediateCAEmail {
-  local INTERMEDIATE_CA_EMAIL=$(gum input --prompt "* Email: " --placeholder "you@acme.com" --value "${PIKA_PKI_DEFAULT_EMAIL}")
-  if [ -z "$INTERMEDIATE_CA_EMAIL" ]; then
-    promptNewIntermediateCAEmail
-  else
-    echo ${INTERMEDIATE_CA_EMAIL}
-  fi
-}
-
-function promptNewIntermediateCACRLURL {
-  local INTERMEDIATE_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI Root: " --placeholder "https://acme.com/pki/crl" --value "${PIKA_PKI_DEFAULT_CRL_URI_BASE}")
-  echo ${INTERMEDIATE_CA_CRL_DIST_URI}
-}
-
-function selectIntermediateCA {
+function selectIntermediateCAScreen {
   local CA_PATH=${1}
   local CA_CN=$(getCertificateCommonName "${CA_PATH}/certs/ca.cert.pem")
   local CA_TYPE=$(getCAType ${CA_PATH})

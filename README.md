@@ -62,7 +62,7 @@ podman run --rm -it -v ./pika-pki:/data:Z quay.io/kenmoini/pika-pki:latest
 - **Create a new Certificate**, type of Server - give it any FQDN you want.
 - With a new Certificate created you can do a number of different things:
   - **Save** the Certificate & Key to a path
-  - **Recreate** the Certificate - create a new key, CSR, and Certificate while revoking/deleting the old one
+  - **Recreate** the Certificate - create a new key, CSR, and Certificate while revoking/deleting the old ones
   - **Rotate** the Certificate - request a new signed Certificate with the existing CSR
   - **Revoke** the Certificate (if the CA has a CRL)
   - **Delete** the Certificate (if the CA does not have a CRL)
@@ -100,6 +100,85 @@ export PIKA_PKI_DEFAULT_CRL_URI_BASE="https://pki.kemo.network/crls"
 # Now run Pika PKI
 ./pika-pki.sh
 ```
+
+## Directory Structure and Common Files
+
+In order for Pika PKI to work, there has to be a standard naming convention and directory structure.  With this information you could technically import any other PKI into a Pika PKI file structure and use its interface - *if that were your thing*.
+
+> Note: The variable name may only be valid for demonstration purposes and not actual variables to override in the code.
+
+| Name | Variable | Default | Notes |
+|------|----------|---------|-------|
+| **Workspace Directory** | `PIKA_PKI_DIR` | `$(pwd)/.pika-pki` | The base directory where everything is created. |
+| **Root Folder** | `ROOT_CA_DIRS` | `$PIKA_PKI_DIR/roots` | A folder holding the Root CAs |
+| **Public Bundles** | `PUBLIC_BUNDLES_DIR` | `$PIKA_PKI_DIR/public_bundles` | A folder holding the generated public bundle files |
+| **Private Bundles** | `PRIVATE_BUNDLES_DIR` | `$PIKA_PKI_DIR/private_bundles` | A folder holding the optional quick folder for private bundle files when saving certificates |
+
+So with that understanding, starting `./pika-pki.sh` will create a base folder structure such as this:
+
+```
+./.pika-pki/
+./.pika-pki/roots/
+./.pika-pki/public_bundles/
+./.pika-pki/public_bundles/certs
+./.pika-pki/public_bundles/crls
+./.pika-pki/private_bundles/
+```
+
+### Key Folders
+
+| Name | Variable | Default | Notes |
+|------|----------|---------|-------|
+| **A Root CA** | `CA_DIR` | `$ROOT_CA_DIRS/my-pretty-root-ca` | A Root CA named "My Pretty Root CA" - for most purposes, CAs of any type can be treated the same |
+| **Signed Certificates** | `` | `$CA_DIR/certs` | In every CA there is a subfolder `certs/` that houses signed and valid certificates |
+| CRL | `` | `$CA_DIR/crl/ca.crl.pem` | If the CA had a CRL defined during creation, there is a subfolder `crl/` that houses the CA's CRL |
+| *CRL - Public Bundle* | `` | `$PUBLIC_BUNDLES_DIR/crls/$CA_TYPE-ca.${CA_CN_SLUG}.crl` | If the CA had a CRL defined during creation, there will be a copy of its CRL in the public bundles `crls` folder |
+| **Certificate Signing Requests** | `` | `$CA_DIR/csrs` | In every CA there is a subfolder `csrs/` that houses CSRs generated for Certificates |
+| **New/Serial Certs** | `` | `$CA_DIR/newcerts` | In every CA there is a subfolder `newcerts/` that houses a copy of every signed certificate organized by serial numbers for filenames |
+| **Private Files** | `` | `$CA_DIR/private` | In every CA there is a subfolder `private/` that houses private files such as private keys |
+| **CA Public Bundles** | `` | `$CA_DIR/public_bundles` | A folder holding the generated public bundle files such as the named CA Chain and CA CRL |
+| OpenSSL Configuration | `` | `$CA_DIR/openssl.cnf` | Every CA has a copy of their own configurable OpenSSL configuration file |
+| OpenSSL "Database" | `` | `$CA_DIR/index.txt` | Every CA has an OpenSSL "database" which is stored as a tab delimited text file |
+
+There are some other files created but those are the key ones to know.
+
+### CA Heirarchy
+
+The PKI Chain has common files/folders for each CA created, but their folder structure matters.  Assuming a PKI of such...
+
+- Root CA
+  - Intermediate CA 1
+    - Intermediate CA 3
+      - Signing CA 2
+
+  - Intermediate CA 2
+    - Signing CA 1
+
+- Other Root CA
+  - Other Intermediate CA 1
+    - Other Signing CA 1
+
+...you would see something similar to this:
+
+```bash
+roots/root-ca/ # Root CA
+roots/root-ca/intermediate-ca/intermediate-ca-1/ # Intermediate CA 1
+roots/root-ca/intermediate-ca/intermediate-ca-1/intermediate-ca/intermediate-ca-3/ # Intermediate CA 3
+roots/root-ca/intermediate-ca/intermediate-ca-1/intermediate-ca/intermediate-ca-3/signing-ca/signing-ca-2/ # Signing CA 2
+
+roots/root-ca/intermediate-ca/intermediate-ca-2/ # Intermediate CA 2
+roots/root-ca/intermediate-ca/intermediate-ca-2/signing-ca/signing-ca-1/ # Signing CA 1
+
+roots/other-root-ca/ # Other Root CA
+roots/other-root-ca/intermediate-ca/other-intermediate-ca-1/ # Other Intermediate CA 1
+roots/other-root-ca/intermediate-ca/other-intermediate-ca-1/signing-ca/other-signing-ca-1/ # Other Signing CA 1
+```
+
+- You can have any number of Root CAs.
+- You can have any number of Intermediate CAs along the chain.
+- Signing CAs terminate any further CA along the chain.
+- Each Root and Intermediate CA has `intermediate-ca` and `signing-ca` sub folders - Signing CAs do not since they are the end of the chain.
+- CA Folder names are based on a "sluggified" version of the CA Common Name
 
 ## Advanced Usage
 

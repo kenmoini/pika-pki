@@ -93,36 +93,48 @@ function createNewRootCA {
       exit 1
     fi
 
+    # Create things such as paths, index files, etc.
     createCommonCAAssets "${ROOT_CA_DIR}" "Root"
 
+    # Create the OpenSSL Configuration file
     echo -e "- Creating default OpenSSL configuration files..."
     generateOpenSSLConfFile "${ROOT_CA_DIR}" "${ROOT_CA_NAME}" "${ROOT_CA_SLUG}" "root" "${ROOT_CA_COUNTRY_CODE}" "${ROOT_CA_STATE}" "${ROOT_CA_LOCALITY}" "${ROOT_CA_ORGANIZATION}" "${ROOT_CA_ORGANIZATIONAL_UNIT}" "${ROOT_CA_EMAIL}" 3650 "${ROOT_CA_CRL_DIST_URI}"
+    
+    # Prompt for a Root CA Password
+    # At this point, you could potentially edit the openssl.cnf file to modify things before the Root CA gets created
+    local PW_FILE=$(mktemp)
+    local KEY_PASS=$(gum input --password --prompt "Enter a password for the Root CA private key: ")
+    echo ${KEY_PASS} > ${PW_FILE}
 
-    generatePrivateKey "${ROOT_CA_DIR}/private/ca.key.pem" "Root CA"
+    # Generate the Root CA private key
+    generatePrivateKey "${ROOT_CA_DIR}/private/ca.key.pem" "Root CA" "${PW_FILE}"
 
+    # Generate the self signed Root CA Certificate
     if [ ! -f ${ROOT_CA_DIR}/certs/ca.cert.pem ]; then
       echo "- No certificate found, creating now..."
-      ROOT_CA_PASS=$(gum input --password --prompt "Enter a password for the Root CA private key: ")
-      PW_FILE=$(mktemp)
-      echo ${ROOT_CA_PASS} > ${PW_FILE}
 
       openssl req -config ${ROOT_CA_DIR}/openssl.cnf \
         -key ${ROOT_CA_DIR}/private/ca.key.pem \
-        -passin file:${PW_FILE} \
+        -batch -passin file:${PW_FILE} \
         -new -x509 -days 7500 -sha256 -extensions v3_root_ca \
         -out ${ROOT_CA_DIR}/certs/ca.cert.pem \
         -subj "/emailAddress=${ROOT_CA_EMAIL}/C=${ROOT_CA_COUNTRY_CODE}/ST=${ROOT_CA_STATE}/L=${ROOT_CA_LOCALITY}/O=${ROOT_CA_ORGANIZATION}/OU=${ROOT_CA_ORGANIZATIONAL_UNIT}/CN=${ROOT_CA_NAME}"
-      
-      rm -f ${PW_FILE}
     else
       echo "- Certificate already exists: ${ROOT_CA_DIR}/certs/ca.cert.pem"
     fi
 
+    # Create the CRL file if a CRL Distribution URI is provided
     if [ ! -z "${ROOT_CA_CRL_DIST_URI}" ]; then
-      createCRLFile "${ROOT_CA_DIR}"
+      createCRLFile "${ROOT_CA_DIR}" "${PW_FILE}"
+    else
+      # Copy the Root CA public bundle around
+      copyCAPublicBundles ${ROOT_CA_DIR}
     fi
 
+    rm -f ${PW_FILE}
+
   fi
+  # Return back to the Root CA selection screen
   selectRootCAScreen
 
 }

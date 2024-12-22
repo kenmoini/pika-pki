@@ -94,29 +94,37 @@ function createNewSigningCA {
       exit 1
     fi
     
+    # Create things such as paths, index files, etc.
     createCommonCAAssets "${SIGNING_CA_DIR}" "Signing"
-    
+
+    # Create the OpenSSL Configuration file
     echo -e "- Creating default OpenSSL configuration files..."
     generateOpenSSLConfFile "${SIGNING_CA_DIR}" "${SIGNING_CA_NAME}" "${SIGNING_CA_SLUG}" "signing" "${SIGNING_CA_COUNTRY_CODE}" "${SIGNING_CA_STATE}" "${SIGNING_CA_LOCALITY}" "${SIGNING_CA_ORGANIZATION}" "${SIGNING_CA_ORGANIZATIONAL_UNIT}" "${SIGNING_CA_EMAIL}" 1875 "${SIGNING_CA_CRL_DIST_URI}"
     
-    generatePrivateKey "${SIGNING_CA_DIR}/private/ca.key.pem" "Signing CA"
+    # Prompt for a Root CA Password
+    # At this point, you could potentially edit the openssl.cnf file to modify things before the Root CA gets created
+    local SIGN_CA_PASS_FW=$(mktemp)
+    local KEY_PASS=$(gum input --password --prompt "Enter a password for the Signing CA private key: ")
+    echo ${KEY_PASS} > ${SIGN_CA_PASS_FW}
 
+    # Generate the Root CA private key
+    generatePrivateKey "${SIGNING_CA_DIR}/private/ca.key.pem" "Signing CA" "${SIGN_CA_PASS_FW}"
+
+    # Generate the Signing CA CSR
     if [ ! -f "${SIGNING_CA_DIR}/csr/ca.csr.pem" ]; then
       echo -e "- Creating Signing CA Certificate Signing Request (CSR)..."
-      SIGNING_CA_PASS=$(gum input --password --prompt "Enter the password for the Signing CA private key: ")
-      SIGN_CA_PASS_FW=$(mktemp)
-      echo ${SIGNING_CA_PASS} > ${SIGN_CA_PASS_FW}
-      openssl req -new -sha256 \
+      
+      openssl req -new -sha256 -batch \
         -config ${SIGNING_CA_DIR}/openssl.cnf \
         -passin file:${SIGN_CA_PASS_FW} \
         -key ${SIGNING_CA_DIR}/private/ca.key.pem \
         -out ${SIGNING_CA_DIR}/csr/ca.csr.pem \
         -subj "/emailAddress=${SIGNING_CA_EMAIL}/C=${SIGNING_CA_COUNTRY_CODE}/ST=${SIGNING_CA_STATE}/L=${SIGNING_CA_LOCALITY}/O=${SIGNING_CA_ORGANIZATION}/OU=${SIGNING_CA_ORGANIZATIONAL_UNIT}/CN=${SIGNING_CA_NAME}"
-      rm -f ${SIGN_CA_PASS_FW}
     else
       echo "- CSR already exists: ${SIGNING_CA_DIR}/csr/ca.csr.pem"
     fi
 
+    # Sign the Signing CA CSR with the parent CA
     if [ ! -f "${SIGNING_CA_DIR}/certs/ca.cert.pem" ]; then
       echo -e "- Signing Signing CA Certificate with parent CA \"${PARENT_CA_NAME}\"..."
       PARENT_CA_PASS=$(gum input --password --prompt "Enter the password for the Parent \"${PARENT_CA_NAME}\" CA private key: ")
@@ -133,8 +141,13 @@ function createNewSigningCA {
     fi
 
     if [ ! -z "${SIGNING_CA_CRL_DIST_URI}" ]; then
-      createCRLFile "${SIGNING_CA_DIR}"
+      createCRLFile "${SIGNING_CA_DIR}" "${SIGN_CA_PASS_FW}"
+    else
+      # Copy the Root CA public bundle around
+      copyCAPublicBundles ${SIGNING_CA_DIR}
     fi
+
+    rm -f ${SIGN_CA_PASS_FW}
 
     selectCAActions "${SIGNING_CA_DIR}"
 

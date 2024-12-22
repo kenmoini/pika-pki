@@ -203,6 +203,7 @@ function batchCreateCertificate {
   createServerCertificate "${PARENT_CA_PATH}" \
     "${PARENT_CA_PASS}" \
     "${CERT_CN}" \
+    "" \
     "${CERT_COUNTRY_CODE}" \
     "${CERT_STATE}" \
     "${CERT_LOCALITY}" \

@@ -140,13 +140,14 @@ function doesCAHaveCRL {
 #==============================================================================
 function processPasswordParam {
   local CA_PASS=${1}
+  local DIRECTION=${2:-"in"}
   local PASS_PARAM=""
 
   if [ ! -z "${CA_PASS}" ]; then
     if [ -f "${CA_PASS}" ]; then
-      PASS_PARAM="-passin file:${CA_PASS}"
+      PASS_PARAM="-pass${DIRECTION} file:${CA_PASS}"
     else
-      PASS_PARAM="-passin pass:${CA_PASS}"
+      PASS_PARAM="-pass${DIRECTION} pass:${CA_PASS}"
     fi
   fi
 
@@ -225,24 +226,31 @@ function getPKIPath {
 # generatePrivateKey - Generate a private key at a given path
 # $1 - Key Path
 # $2 - Type (default: "") [Certificate, Root CA, Intermediate CA, Signing CA]
-# $3 - Bit Length (default: 4096)
+# $3 - Password (default: "")
+# $4 - Bit Length (default: 4096)
 #==============================================================================
 function generatePrivateKey {
   local KEY_PATH=${1}
   local TYPE=${2:-""}
-  local BIT_LENGTH=${3:-4096}
+  local PASSWORD=${3:-""}
+  local BIT_LENGTH=${4:-4096}
   local PW_FILE=$(mktemp)
+  local PASSWD_PARAMS=$(processPasswordParam ${PASSWORD} "out")
 
   if [ ! -f ${KEY_PATH} ]; then
     echo "- Generating private key..."
     if [ "${TYPE}" == "Certificate" ] && [ "false" == "${PIKA_PKI_CERT_KEY_ENCRYPTION}" ]; then
       openssl genrsa -out ${KEY_PATH} ${BIT_LENGTH}
     else
-      local KEY_PASS=$(gum input --password --prompt "Enter a password for the ${TYPE} private key: ")
-      echo ${KEY_PASS} > ${PW_FILE}
-
-      openssl genrsa -aes256 -passout file:${PW_FILE} -out ${KEY_PATH} ${BIT_LENGTH}
-      rm -f ${PW_FILE}
+      #local KEY_PASS=$(gum input --password --prompt "Enter a password for the ${TYPE} private key: ")
+      #echo ${KEY_PASS} > ${PW_FILE}
+      #openssl genrsa -aes256 -passout file:${PW_FILE} -out ${KEY_PATH} ${BIT_LENGTH}
+      if [ -z "${PASSWORD}" ]; then
+        openssl genrsa -aes256 -out ${KEY_PATH} ${BIT_LENGTH}
+      else
+        openssl genrsa -aes256 ${PASSWD_PARAMS} -out ${KEY_PATH} ${BIT_LENGTH}
+      fi
+      #rm -f ${PW_FILE}
     fi
     chmod 400 ${KEY_PATH}
   else

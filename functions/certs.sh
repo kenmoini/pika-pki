@@ -79,6 +79,10 @@ function createServerCertificateInputScreen {
   local SERVER_DNS_SANS_FRIENDLY="DNS:${SERVER_CERT_NAME} (Automatically added)"
   local SERVER_DNS_SANS_FORMATTED="DNS:${SERVER_CERT_NAME}"
 
+  # Set the certificate name and path
+  local SERVER_CERT_FILENAME="$(echo "${SERVER_CERT_NAME}" | sed 's/*/wildcard/')"
+  local SERVER_CERT_PATH="${PARENT_CA_PATH}/certs/${SERVER_CERT_FILENAME}.cert.pem"
+
   # Append any additional DNS SANs
   if [ ! -z "${SERVER_CERT_DNS_SAN}" ]; then
     local SERVER_DNS_SANS=$(echo ${SERVER_CERT_DNS_SAN} | sed 's/,/,DNS:/g')
@@ -103,6 +107,7 @@ function createServerCertificateInputScreen {
     createServerCertificate "${PARENT_CA_PATH}" \
       "${PW_FILE}" \
       "${SERVER_CERT_NAME}" \
+      "${SERVER_CERT_FILENAME}" \
       "${SERVER_CERT_COUNTRY_CODE}" \
       "${SERVER_CERT_STATE}" \
       "${SERVER_CERT_LOCALITY}" \
@@ -134,19 +139,23 @@ function createServerCertificate {
   # Filename in this instance should be for whatever the first CN is but with an asterisk replaced with "wildcard"
   local SERVER_CERT_NAME=${3}
   local SAFE_SERVER_CERT_NAME=$(echo "${SERVER_CERT_NAME}" | sed 's/*/wildcard/')
+  local SERVER_CERT_FILENAME=${4:-""}
+  if [ -z "${SERVER_CERT_FILENAME}" ]; then
+    SERVER_CERT_FILENAME="${SAFE_SERVER_CERT_NAME}"
+  fi
 
-  local SERVER_CERT_COUNTRY_CODE=${4}
-  local SERVER_CERT_STATE=${5}
-  local SERVER_CERT_LOCALITY=${6}
-  local SERVER_CERT_ORGANIZATION=${7}
-  local SERVER_CERT_ORGANIZATIONAL_UNIT=${8}
-  local SERVER_CERT_EMAIL=${9}
-  local SERVER_SANS_FORMATTED=${10}
+  local SERVER_CERT_COUNTRY_CODE=${5}
+  local SERVER_CERT_STATE=${6}
+  local SERVER_CERT_LOCALITY=${7}
+  local SERVER_CERT_ORGANIZATION=${8}
+  local SERVER_CERT_ORGANIZATIONAL_UNIT=${9}
+  local SERVER_CERT_EMAIL=${10}
+  local SERVER_SANS_FORMATTED=${11}
 
   # Set the certificate component paths
-  local SERVER_KEY_PATH="${PARENT_CA_PATH}/private/${SAFE_SERVER_CERT_NAME}.key.pem"
-  local SERVER_CSR_PATH="${PARENT_CA_PATH}/csr/${SAFE_SERVER_CERT_NAME}.csr.pem"
-  local SERVER_CERT_PATH="${PARENT_CA_PATH}/certs/${SAFE_SERVER_CERT_NAME}.cert.pem"
+  local SERVER_KEY_PATH="${PARENT_CA_PATH}/private/${SERVER_CERT_FILENAME}.key.pem"
+  local SERVER_CSR_PATH="${PARENT_CA_PATH}/csr/${SERVER_CERT_FILENAME}.csr.pem"
+  local SERVER_CERT_PATH="${PARENT_CA_PATH}/certs/${SERVER_CERT_FILENAME}.cert.pem"
   
   # Make sure the certificate name is unique
   if [ -f "${SERVER_CERT_PATH}" ] || [ -f "${SERVER_KEY_PATH}" ] || [ -f "${SERVER_CSR_PATH}" ]; then
@@ -394,7 +403,7 @@ function saveCertificateActions {
     echo "===== CA Path: $(getPKIPath ${CERT_CA_PATH})"
   fi
 
-  local CERT_OPTIONS='../ Back\n[+] Save Certificate as PKCS#12\n[+] Save Certificate as PEM\n[+] Save Certificate Bundle\n[+] Save HAProxy Bundle'
+  local CERT_OPTIONS='../ Back\n[+] Save Certificate as PKCS#12\n[+] Save Certificate as PEM\n[+] Save HAProxy Bundle'
 
   local SELECTED_ACTION=$(echo -e "${CERT_OPTIONS}" | gum choose)
   if [ -z "$SELECTED_ACTION" ]; then
@@ -411,9 +420,6 @@ function saveCertificateActions {
       ;;
     "[+] Save Certificate as PEM")
       saveCertificateFiles ${CERT_PATH} "pem"
-      ;;
-    "[+] Save Certificate Bundle")
-      saveCertificateFiles ${CERT_PATH} "bundle"
       ;;
     "[+] Save HAProxy Bundle")
       saveCertificateFiles ${CERT_PATH} "haproxy"
@@ -456,14 +462,12 @@ function saveCertificateFiles {
   cp "$(getRootCAPath ${CERT_PATH})/certs/ca.cert.pem" ${SAVE_PATH}/root-ca.pem
 
   # Basic certificate bundle and PEM files
-  if [ "${SAVE_TYPE}" == "pem" ] || [ "${SAVE_TYPE}" == "bundle" ]; then
+  if [ "${SAVE_TYPE}" == "pem" ]; then
     cp ${CERT_PATH} ${SAVE_PATH}/cert.pem
+    rm -f ${SAVE_PATH}/key.pem
     cp ${CERT_KEY_PATH} ${SAVE_PATH}/key.pem
     cp ${CERT_CA_PATH}/certs/ca.cert.pem ${SAVE_PATH}/ca.pem
-  fi
 
-  # Generate the CA chain files
-  if [ "${SAVE_TYPE}" == "bundle" ]; then
     generateCAChain ${CERT_PATH} > ${SAVE_PATH}/chain.pem
     generateCAChain ${CERT_PATH} "true" > ${SAVE_PATH}/full-chain.pem
 
@@ -572,6 +576,7 @@ function rotateCertificate {
     createServerCertificate "${PARENT_CA_PATH}" \
       "${CA_PASSWORD}" \
       "${CERT_CN}" \
+      "" \
       "${CERT_COUNTRY}" \
       "${CERT_STATE}" \
       "${CERT_LOCALITY}" \

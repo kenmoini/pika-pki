@@ -90,25 +90,32 @@ function createNewIntermediateCA {
       exit 1
     fi
 
+    # Create things such as paths, index files, etc.
     createCommonCAAssets "${INTERMEDIATE_CA_DIR}" "Intermediate"
 
+    # Create the OpenSSL Configuration file
     echo -e "- Creating default OpenSSL configuration files..."
     generateOpenSSLConfFile "${INTERMEDIATE_CA_DIR}" "${INTERMEDIATE_CA_NAME}" "${INTERMEDIATE_CA_SLUG}" "intermediate" "${INTERMEDIATE_CA_COUNTRY_CODE}" "${INTERMEDIATE_CA_STATE}" "${INTERMEDIATE_CA_LOCALITY}" "${INTERMEDIATE_CA_ORGANIZATION}" "${INTERMEDIATE_CA_ORGANIZATIONAL_UNIT}" "${INTERMEDIATE_CA_EMAIL}" 3650 "${INTERMEDIATE_CA_CRL_DIST_URI}"
 
-    generatePrivateKey "${INTERMEDIATE_CA_DIR}/private/ca.key.pem" "Intermediate CA"
+    # Prompt for a Intermediate CA Password
+    # At this point, you could potentially edit the openssl.cnf file to modify things before the Intermediate CA gets created
+    local INT_CA_PASS_FW=$(mktemp)
+    local KEY_PASS=$(gum input --password --prompt "Enter a password for the Intermediate CA private key: ")
+    echo ${KEY_PASS} > ${INT_CA_PASS_FW}
+
+    # Generate the Intermediate CA private key
+    generatePrivateKey "${INTERMEDIATE_CA_DIR}/private/ca.key.pem" "Intermediate CA" "${INT_CA_PASS_FW}"
 
     if [ ! -f "${INTERMEDIATE_CA_DIR}/csr/ca.csr.pem" ]; then
       echo -e "- Creating Intermediate CA Certificate Signing Request (CSR)..."
-      INTERMEDIATE_CA_PASS=$(gum input --password --prompt "Enter the password for the Intermediate CA private key: ")
-      INT_CA_PASS_FW=$(mktemp)
-      echo ${INTERMEDIATE_CA_PASS} > ${INT_CA_PASS_FW}
-      openssl req -new -sha256 \
+      
+      openssl req -new -sha256 -batch \
         -config ${INTERMEDIATE_CA_DIR}/openssl.cnf \
         -passin file:${INT_CA_PASS_FW} \
         -key ${INTERMEDIATE_CA_DIR}/private/ca.key.pem \
         -out ${INTERMEDIATE_CA_DIR}/csr/ca.csr.pem \
         -subj "/emailAddress=${INTERMEDIATE_CA_EMAIL}/C=${INTERMEDIATE_CA_COUNTRY_CODE}/ST=${INTERMEDIATE_CA_STATE}/L=${INTERMEDIATE_CA_LOCALITY}/O=${INTERMEDIATE_CA_ORGANIZATION}/OU=${INTERMEDIATE_CA_ORGANIZATIONAL_UNIT}/CN=${INTERMEDIATE_CA_NAME}"
-      rm -f ${INT_CA_PASS_FW}
+
     else
       echo "- CSR already exists: ${INTERMEDIATE_CA_DIR}/csr/ca.csr.pem"
     fi
@@ -120,8 +127,8 @@ function createNewIntermediateCA {
       echo ${PARENT_CA_PASS} > ${PARENT_CA_PASS_FW}
 
       openssl ca -config ${PARENT_CA_PATH}/openssl.cnf -extensions v3_intermediate_ca \
-        -passin file:${PARENT_CA_PASS_FW} \
         -days 3750 -notext -md sha256 -batch \
+        -passin file:${PARENT_CA_PASS_FW} \
         -in ${INTERMEDIATE_CA_DIR}/csr/ca.csr.pem \
         -out ${INTERMEDIATE_CA_DIR}/certs/ca.cert.pem
 
@@ -129,8 +136,13 @@ function createNewIntermediateCA {
     fi
 
     if [ ! -z "${INTERMEDIATE_CA_CRL_DIST_URI}" ]; then
-      createCRLFile "${INTERMEDIATE_CA_DIR}"
+      createCRLFile "${INTERMEDIATE_CA_DIR}" "${INT_CA_PASS_FW}"
+    else
+      # Copy the Intermediate CA public bundle around
+      copyCAPublicBundles ${INTERMEDIATE_CA_DIR}
     fi
+
+    rm -f ${INT_CA_PASS_FW}
 
     selectCAActions "${INTERMEDIATE_CA_DIR}"
 

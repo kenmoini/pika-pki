@@ -57,9 +57,14 @@ default_md        = sha256
 name_opt          = ca_default
 cert_opt          = ca_default
 default_days      = ${CA_DAYS_VALID}
+email_in_dn       = no
+# Keep passed DN ordering
 preserve          = no
+# Required to copy SANs from CSR to certificate.
 copy_extensions   = copy
 policy            = policy_${CA_TYPE}
+# unique_subject may want to be set conditionally based on the CA Type.
+unique_subject    = no
 
 EOF
 
@@ -102,13 +107,13 @@ emailAddress            = supplied
 [ policy_signing ]
 # Allow the signing CAs to sign a more diverse range of certificates.
 # See the POLICY FORMAT section of 'man ca'.
-countryName             = supplied
-stateOrProvinceName     = supplied
-localityName            = supplied
-organizationName        = supplied
+countryName             = optional
+stateOrProvinceName     = optional
+localityName            = optional
+organizationName        = optional
 organizationalUnitName  = optional
 commonName              = supplied
-emailAddress            = supplied
+emailAddress            = optional
 
 ## TODO: Add a policy for LDAP CAs?
 

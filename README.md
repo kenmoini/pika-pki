@@ -30,7 +30,7 @@ Pika PKI is a PKI management Text User Interface (TUI).  It's built using [gum](
 1. [Install gum](https://github.com/charmbracelet/gum?tab=readme-ov-file#installation) and above other dependencies.
 2. Clone this repo `git clone https://github.com/kenmoini/pika-pki`
 3. Enter the directory `cd pika-pki`
-4. Run `./pika-pki`
+4. Run `./pika-pki.sh`
 5. ???????
 6. ***PROFIT!!!!!!1***
 
@@ -169,7 +169,9 @@ To override these defaults, create a folder called `overrides` in this directory
 
 ---
 
-## Boring Things - Directory Structure and Common Files
+# Boring Things
+
+## Directory Structure and Common Files
 
 In order for Pika PKI to work, there has to be a standard naming convention and directory structure.  With this information you could technically import any other PKI into a Pika PKI file structure and use its interface - *if that were your thing*.
 

@@ -125,7 +125,7 @@ podman run -it --rm -d -p 8085:80 \
  -v .pika-pki/public_bundles:/usr/share/nginx/html/pki-pub:Z \
  docker.io/nginx
 
-# or - Start the nginx container with directory listeing enabled
+# or - Start the nginx container with directory listing enabled
 
 echo 'server {listen 80; server_name localhost; location / { root /usr/share/nginx/html; index index.html index.htm; autoindex on; autoindex_exact_size off; }}' > nginx-default.conf
 

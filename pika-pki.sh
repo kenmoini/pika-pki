@@ -24,6 +24,7 @@ source ${SCRIPT_DIR}/functions/root-ca.sh
 source ${SCRIPT_DIR}/functions/intermediate-ca.sh
 source ${SCRIPT_DIR}/functions/signing-ca.sh
 source ${SCRIPT_DIR}/functions/certs.sh
+source ${SCRIPT_DIR}/functions/batch.sh
 
 #==============================================================================
 # Set Environment Variables and defaults
@@ -36,19 +37,28 @@ export PIKA_PKI_DEFAULT_LOCALITY=${PIKA_PKI_DEFAULT_LOCALITY:=""}
 export PIKA_PKI_DEFAULT_EMAIL=${PIKA_PKI_DEFAULT_EMAIL:=""}
 export PIKA_PKI_CERT_KEY_ENCRYPTION=${PIKA_PKI_CERT_KEY_ENCRYPTION:="false"}
 export PIKA_PKI_DEFAULT_CRL_URI_BASE=${PIKA_PKI_DEFAULT_CRL_URI_BASE:=""}
+PIKA_PKI_DEFAULT_CRL_URI_BASE=$(stripLS ${PIKA_PKI_DEFAULT_CRL_URI_BASE})
+
 
 export PIKA_PKI_DIR=${PIKA_PKI_DIR:="$(pwd)/.pika-pki"}
 
-#==============================================================================
-# Directory Check
-#==============================================================================
-echo "===== Working PKI Base Directory: ${PIKA_PKI_DIR}"
-echo "Do you want to continue with this directory?"
-gum confirm && echo -e "- Continuing...\n" || exit 1
+if [ $# -eq 0 ]; then
+  #==============================================================================
+  # Directory Check
+  #==============================================================================
+  echo "===== Working PKI Base Directory: ${PIKA_PKI_DIR}"
+  echo "Do you want to continue with this directory?"
+  gum confirm && echo -e "- Continuing...\n" || exit 1
 
-mkdir -p ${PIKA_PKI_DIR}/{roots,private_bundles,public_bundles/{certs,crls}}
+  mkdir -p ${PIKA_PKI_DIR}/{roots,private_bundles,public_bundles/{certs,crls}}
 
-#==============================================================================
-# Menu Entrypoint
-#==============================================================================
-selectRootCA
+  #==============================================================================
+  # Menu Entrypoint
+  #==============================================================================
+  selectRootCA
+else
+  #==============================================================================
+  # Start CLI batch mode
+  #==============================================================================
+  batchEntrypoint "$@"
+fi

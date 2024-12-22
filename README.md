@@ -2,7 +2,7 @@
 
 Pika PKI is a PKI management Text User Interface (TUI).  It's built using [gum](https://github.com/charmbracelet/gum?tab=readme-ov-file), which is a dependency.  Non gum-TUI interfaces are exposed via CLI options.
 
-<table style="border:none"><tbody><tr><td style="border:none"><center><img width="200" alt="Pika PKI Logo, a picture of a lock with a lightning bolt as the keyhole" src="./pika-pki-logo.png" /></center></td><td style="border:none">
+<table style="border:none"><tbody><tr><td style="border:none"><center><img width="200" alt="Pika PKI Logo, a picture of a lock with a lightning bolt as the keyhole" src="./logo.png" /></center></td><td style="border:none">
 
 - Create and manage multiple Root Certificate Authorities and their chains
 - Define your PKI Chain however you want with Intermediate CAs and Signing CAs

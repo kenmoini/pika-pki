@@ -10,10 +10,10 @@ source ${SCRIPT_DIR}/functions/formatting.sh
 source ${SCRIPT_DIR}/functions/common.sh
 
 #=======================================================================================================
-# createOpenshiftAPICertificate - Create an OpenShift API certificate with a given cluster base domain
+# createOpenshiftAPICertificateInputScreen - Create an OpenShift API certificate with a given cluster base domain
 # $1 - Parent CA Path
 #=======================================================================================================
-function createOpenshiftAPICertificate {
+function createOpenshiftAPICertificateInputScreen {
   # Input variable assignments and inheritance information
   local PARENT_CA_PATH=${1}
   local PARENT_CA_NAME=$(getCertificateCommonName "${PARENT_CA_PATH}/certs/ca.cert.pem")
@@ -120,10 +120,10 @@ function createOpenshiftAPICertificate {
 }
 
 #=======================================================================================================
-# createOpenshiftRouterCertificate - Create an OpenShift Router certificate with a given cluster base domain
+# createOpenshiftRouterCertificateInputScreen - Create an OpenShift Router certificate with a given cluster base domain
 # $1 - Parent CA Path
 #=======================================================================================================
-function createOpenshiftIngressCertificate {
+function createOpenshiftIngressCertificateInputScreen {
   # Input variable assignments and inheritance information
   local PARENT_CA_PATH=${1}
   local PARENT_CA_NAME=$(getCertificateCommonName "${PARENT_CA_PATH}/certs/ca.cert.pem")
@@ -232,7 +232,7 @@ function createOpenshiftIngressCertificate {
 # createOpenshiftComboCertificate - Create an OpenShift Combo certificate (both API and Ingress) with a given cluster base domain
 # $1 - Parent CA Path
 #=======================================================================================================
-function createOpenshiftComboCertificate {
+function createOpenshiftComboCertificateInputScreen {
   # Input variable assignments and inheritance information
   local PARENT_CA_PATH=${1}
   local PARENT_CA_NAME=$(getCertificateCommonName "${PARENT_CA_PATH}/certs/ca.cert.pem")

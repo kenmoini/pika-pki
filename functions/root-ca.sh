@@ -7,6 +7,8 @@ source ${SCRIPT_DIR}/functions/prompts.ca.sh
 function selectRootCAScreen {
   local ROOT_CA_DIRS=$(find ${PIKA_PKI_DIR}/roots/ -maxdepth 1 -type d -printf '%p\n' | grep -ve "^${PIKA_PKI_DIR}/roots/$")
   if [ -z "$ROOT_CA_DIRS" ]; then
+    clear
+    echoBanner "Empty Workspace"
     echo "No Root CA's found.  Would you like to create a new one?"
     if gum confirm; then
       createNewRootCA

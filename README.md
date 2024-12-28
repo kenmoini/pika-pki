@@ -16,6 +16,8 @@ Pika PKI is a PKI management Text User Interface (TUI).  It's built using [gum](
 
 > **More screengrabs:** [Intermediate CA](assets/PikaPKI-IntCA.gif) | [Signing CA](assets/PikaPKI-SigningCA.gif) | [Creating a Certificate](assets/PikaPKI-NewCert.gif) | [Saving a Certificate](assets/PikaPKI-SaveCert.gif)
 
+---
+
 ## Getting Started
 
 ### Dependencies
@@ -48,6 +50,8 @@ mkdir pika-pki
 podman run --rm -it -v ./pika-pki:/data:Z quay.io/kenmoini/pika-pki:latest
 ```
 
+---
+
 ## Concepts
 
 - You can create and manage any number of **Root Certificate Authorities**
@@ -56,6 +60,8 @@ podman run --rm -it -v ./pika-pki:/data:Z quay.io/kenmoini/pika-pki:latest
 - Any CA along the chain can sign Certificates of any sort, but it's best to leave that to a Signing CA at the end of the chain
 - The Workspace directory stores all the assets for the PKI - in that directory structure you will find a `public_bundles` folder with a set of subdirectories called `certs` and `crls`.  This is where public Certificates like CA Certificates and CRLs will be stored.  You should be able to copy or symlink the path to where a web server can host those assets.
 - There is another directory called `private_bundles` in the Workspace directory - this is meant as an easily accessible place to store your Saved Certificates.
+
+---
 
 ## Usage
 
@@ -72,6 +78,8 @@ podman run --rm -it -v ./pika-pki:/data:Z quay.io/kenmoini/pika-pki:latest
   - **Delete** the Certificate (if the CA does not have a CRL)
 
 Additional Advanced Usage options are available as detailed below.
+
+---
 
 ## Optional Parameters
 

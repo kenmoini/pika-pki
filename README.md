@@ -2,7 +2,7 @@
 
 Pika PKI is a PKI management Text User Interface (TUI).  It's built using [gum](https://github.com/charmbracelet/gum?tab=readme-ov-file), which is a dependency.  Non gum-TUI interfaces are exposed via CLI options.
 
-<table style="border:none"><tbody><tr><td style="border:none"><center><img width="200" alt="Pika PKI Logo, a picture of a lock with a lightning bolt as the keyhole" src="./logo.png" /></center></td><td style="border:none">
+<table style="border:none"><tbody><tr><td style="border:none"><center><img width="200" alt="Pika PKI Logo, a picture of a lock with a lightning bolt as the keyhole" src="./assets/logo.png" /></center></td><td style="border:none">
 
 - Create and manage multiple Root Certificate Authorities and their chains
 - Define your PKI Chain however you want with Intermediate CAs and Signing CAs
@@ -12,7 +12,13 @@ Pika PKI is a PKI management Text User Interface (TUI).  It's built using [gum](
 
 </td></tr></tbody></table>
 
-## Dependencies
+![Pika PKI Initialization](assets/PikaPKI-Init.gif "Pika PKI Initialization")
+
+> **More screengrabs:** [Intermediate CA](assets/PikaPKI-IntCA.gif) | [Signing CA](assets/PikaPKI-SigningCA.gif) | [Creating a Certificate](assets/PikaPKI-NewCert.gif) | [Saving a Certificate](assets/PikaPKI-SaveCert.gif)
+
+## Getting Started
+
+### Dependencies
 
 - [Gum](https://github.com/charmbracelet/gum)
 - OpenSSL
@@ -22,8 +28,6 @@ Pika PKI is a PKI management Text User Interface (TUI).  It's built using [gum](
 - tree
 
 > Or, just Docker/Podman.
-
-## Getting Started
 
 ### The Old Fashioned Way
 
@@ -254,5 +258,4 @@ roots/other-root-ca/intermediate-ca/other-intermediate-ca-1/signing-ca/other-sig
 
 ## TODO
 
-- Add cool screen recording GIFs
-- Add CA Operational Commands to menu
+- Add CA Operational Commands to menu (Process Bundle, Rotate CRL)

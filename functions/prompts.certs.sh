@@ -18,7 +18,7 @@ function promptSavePath {
 # promptNewServerCertificateName will prompt the user for a new server certificate [common] name
 #=====================================================================================================================
 function promptNewServerCertificateName {
-  local SERVER_CERT_NAME=$(gum input --prompt "* Server Certificate [Common] Name: " --placeholder "server.acme.com")
+  local SERVER_CERT_NAME=$(gum input --prompt "* Server Certificate [Common] Name: " --placeholder "acme.com")
   if [ -z "$SERVER_CERT_NAME" ]; then
     promptNewServerCertificateName
   else
@@ -30,8 +30,16 @@ function promptNewServerCertificateName {
 # promptNewServerCertificateDNSSAN will prompt the user for a new server certificate's additional DNS SANs
 #=====================================================================================================================
 function promptNewServerCertificateDNSSAN {
-  local SERVER_CERT_DNS_SAN=$(gum input --prompt "[Optional] Additional DNS SAN(s): " --placeholder "*.apps.server.acme.com,api.server.acme.com")
+  local SERVER_CERT_DNS_SAN=$(gum input --prompt "[Optional] Additional DNS SAN(s), comma separated: " --placeholder "www.acme.com,*.apps.ocp.acme.com,api.ocp.acme.com")
   echo ${SERVER_CERT_DNS_SAN}
+}
+
+#=====================================================================================================================
+# promptNewServerCertificateIPSAN will prompt the user for a new server certificate's additional IP SANs
+#=====================================================================================================================
+function promptNewServerCertificateIPSAN {
+  local SERVER_CERT_IP_SAN=$(gum input --prompt "[Optional] Additional IP SAN(s), comma separated: " --placeholder "1.2.3.4,10.16.3.4")
+  echo ${SERVER_CERT_IP_SAN}
 }
 
 #=====================================================================================================================

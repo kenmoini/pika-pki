@@ -38,7 +38,7 @@ function batchEntrypoint {
     case $OPTION in
       a)
         # Set the authority
-        PIKA_PKI_BATCH_AUTHORITY=$(stripLS "${OPTARG}")
+        PIKA_PKI_BATCH_AUTHORITY=$(stripLastSlash "${OPTARG}")
         ;;
       c)
         # Set the country

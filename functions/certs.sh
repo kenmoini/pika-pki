@@ -68,6 +68,7 @@ function createServerCertificateInputScreen {
   # Input prompts
   local SERVER_CERT_NAME=$(promptNewServerCertificateName)
   local SERVER_CERT_DNS_SAN=$(promptNewServerCertificateDNSSAN)
+  local SERVER_CERT_IP_SAN=$(promptNewServerCertificateIPSAN)
   local SERVER_CERT_COUNTRY_CODE=$(promptNewServerCertificateCountryCode)
   local SERVER_CERT_STATE=$(promptNewServerCertificateState)
   local SERVER_CERT_LOCALITY=$(promptNewServerCertificateLocality)
@@ -78,24 +79,37 @@ function createServerCertificateInputScreen {
   # Format the default DNS SANs
   local SERVER_DNS_SANS_FRIENDLY="DNS:${SERVER_CERT_NAME} (Automatically added)"
   local SERVER_DNS_SANS_FORMATTED="DNS:${SERVER_CERT_NAME}"
+  local SERVER_COMPILED_SANS="DNS:${SERVER_CERT_NAME}"
 
   # Set the certificate name and path
   local SERVER_CERT_FILENAME="$(echo "${SERVER_CERT_NAME}" | sed 's/*/wildcard/')"
   local SERVER_CERT_PATH="${PARENT_CA_PATH}/certs/${SERVER_CERT_FILENAME}.cert.pem"
 
   # Append any additional DNS SANs
+  if [ ! -z "${SERVER_CERT_IP_SAN}" ]; then
+    local SERVER_IP_SANS=$(echo "$(stripLastCommas ${SERVER_CERT_IP_SAN})" | sed 's/,/,IP:/g')
+    local SERVER_IP_SANS_NL="$(echo ${SERVER_IP_SANS} | sed 's/,/\n/g' | sed 's/IP:/  - /g')"
+    SERVER_COMPILED_SANS="${SERVER_COMPILED_SANS},${SERVER_IP_SANS}"
+  fi
+
   if [ ! -z "${SERVER_CERT_DNS_SAN}" ]; then
     local SERVER_DNS_SANS=$(echo ${SERVER_CERT_DNS_SAN} | sed 's/,/,DNS:/g')
     SERVER_DNS_SANS_FRIENDLY="${SERVER_DNS_SANS_FRIENDLY},DNS:${SERVER_DNS_SANS}"
     SERVER_DNS_SANS_FORMATTED="${SERVER_DNS_SANS_FORMATTED},DNS:${SERVER_DNS_SANS}"
+    SERVER_COMPILED_SANS="${SERVER_COMPILED_SANS},DNS:${SERVER_DNS_SANS}"
+    local SERVER_DNS_SANS_NL="$(echo ${SERVER_DNS_SANS_FRIENDLY} | sed 's/,/\n/g' | sed 's/DNS:/  - /g')"
   fi
 
-  # Format the DNS SANs for display
-  local SERVER_DNS_SANS_NL="$(echo ${SERVER_DNS_SANS_FRIENDLY} | sed 's/,/\n/g' | sed 's/DNS:/  - /g')"
+  SERVER_COMPILED_SANS_NL="$(echo ${SERVER_COMPILED_SANS} | sed 's/,/\n/g' | sed 's/DNS:/  - /g' | sed 's/IP:/  - /g')"
 
   # Display the certificate information
   echo -e "- $(bld 'Common Name:') ${SERVER_CERT_NAME}\n- $(bld Country Code:) ${SERVER_CERT_COUNTRY_CODE}\n- $(bld State:) ${SERVER_CERT_STATE}\n- $(bld Locality:) ${SERVER_CERT_LOCALITY}\n- $(bld Organization:) ${SERVER_CERT_ORGANIZATION}\n- $(bld Organizational Unit:) ${SERVER_CERT_ORGANIZATIONAL_UNIT}\n- $(bld Email:) ${SERVER_CERT_EMAIL}"
-  echo -e "- $(bld 'DNS SANs:')\n${SERVER_DNS_SANS_NL}"
+  #echo -e "- $(bld 'DNS SANs:')\n${SERVER_DNS_SANS_NL}"
+  echo -e "- $(bld 'SANs:')\n${SERVER_COMPILED_SANS_NL}"
+  
+  #if [ ! -z "${SERVER_CERT_IP_SAN}" ]; then
+  #  echo -e "- $(bld 'IP SANs:') ${SERVER_IP_SANS_NL}"
+  #fi
 
   if gum confirm; then
     # Prompt for the signing CA's password, save it to a temporary file

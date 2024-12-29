@@ -105,6 +105,12 @@ function getCertificateSANS {
   openssl x509 -noout -ext subjectAltName -in ${CERT_PATH} | sed 's/subjectAltName=//g' | sed 's/,/\n/g' | tail -n +2 | tr -d '[:blank:]' | tr '\n' ',' | sed 's|,*$||'
 }
 
+function getCAURIBase {
+  local CA_PATH=${1}
+  local CA_URI_BASE=$(cat ${CA_PATH}/openssl.cnf | grep -e "#  - Distribution URI: " | awk -F'URI: ' '{ print $2 }')
+  echo ${CA_URI_BASE}
+}
+
 #==============================================================================
 # isCertificateAuthority checks if a certificate is a Certificate Authority.
 # $1 - Certificate Path
@@ -213,7 +219,7 @@ function getPKIPath {
   local CA_PATH=${1}
   local BASE_PATH=$(sed 's|'$PIKA_PKI_DIR'/||g' <<< ${CA_PATH})
   local ROOT=$(sed 's|roots/||' <<< ${BASE_PATH})
-  local INTERMEDIATE=$(sed 's|/intermediate-ca/| > |' <<< ${ROOT})
+  local INTERMEDIATE=$(sed 's|/intermediate-ca/| > |g' <<< ${ROOT})
   local SIGNING=$(sed 's|/signing-ca/| > |' <<< ${INTERMEDIATE})
   echo $SIGNING
 }
@@ -418,15 +424,17 @@ function selectCAActions {
 function selectCertificateScreen {
   local CA_PATH=${1}
   local CA_TYPE=$(getCAType ${CA_PATH})
-  local CERT_OPTIONS='../ Back\n[+] Create a new Certificate'
+  local CERT_OPTIONS='../ Back'
   local CERTIFICATES=$(find ${CA_PATH}/certs/ -maxdepth 1 -type f -name '*.cert.pem' -printf '%p\n' | grep -ve "^${CA_PATH}/certs/ca.cert.pem$" | sed '/^$/d' | sed 's|'${CA_PATH}'/certs/||g' | sed 's|.cert.pem||g')
   if [ ! -z "${CERTIFICATES}" ]; then
     CERT_OPTIONS=''${CERT_OPTIONS}'\n'${CERTIFICATES}''
   fi
+  CERT_OPTIONS+='\n[+] Create a new Certificate'
 
   clear
   #echoBanner "[${CA_TYPE}] $(getBannerPath "${CA_PATH}") - Certificate Selection"
-  echoBanner "[${CA_TYPE}] $(getCertificateCommonName ${ACTIVE_CA_PATH}/certs/ca.cert.pem) - Certificate Selection"
+  #echoBanner "[${CA_TYPE}] $(getCertificateCommonName ${ACTIVE_CA_PATH}/certs/ca.cert.pem) - Certificate Selection"
+  echoBanner "[${CA_TYPE}] $(getCertificateCommonName ${CA_PATH}/certs/ca.cert.pem) - Certificate Selection"
   echo "===== CA Path: $(getPKIPath ${CA_PATH})"
   
   local SELECTED_ACTION=$(echo -e "${CERT_OPTIONS}" | gum choose)
@@ -504,22 +512,27 @@ function copyCAPublicBundles {
   # Determine CA Type
   case "${CA_TYPE}" in
     "Root")
-      local CA_CERT_FILENAME="root-ca.${CA_SLUG}.cert.pem"
+      local CA_CERT_FILENAME="root-ca.${CA_SLUG}.${CERT_PEM_FILE_EXTENSION}"
       local CA_CRL_FILENAME="root-ca.${CA_SLUG}.crl"
+      local CA_DER_FILENAME="root-ca.${CA_SLUG}.${CERT_DER_FILE_EXTENSION}"
       ;;
     "Intermediate")
-      local CA_CERT_FILENAME="intermediate-ca.${CA_SLUG}.cert.pem"
+      local CA_CERT_FILENAME="intermediate-ca.${CA_SLUG}.${CERT_PEM_FILE_EXTENSION}"
       local CA_CRL_FILENAME="intermediate-ca.${CA_SLUG}.crl"
+      local CA_DER_FILENAME="intermediate-ca.${CA_SLUG}.${CERT_DER_FILE_EXTENSION}"
       ;;
     "Signing")
-      local CA_CERT_FILENAME="signing-ca.${CA_SLUG}.cert.pem"
+      local CA_CERT_FILENAME="signing-ca.${CA_SLUG}.${CERT_PEM_FILE_EXTENSION}"
       local CA_CRL_FILENAME="signing-ca.${CA_SLUG}.crl"
+      local CA_DER_FILENAME="signing-ca.${CA_SLUG}.${CERT_DER_FILE_EXTENSION}"
       ;;
   esac
 
   # Copy the CA Cert to the public_bundles directory
   cp ${CA_CERT} ${CA_DIR}/public_bundles/certs/${CA_CERT_FILENAME}
   cp ${CA_CERT} ${PIKA_PKI_DIR}/public_bundles/certs/${CA_CERT_FILENAME}
+  createCertificateDER ${CA_CERT} ${CA_DIR}/public_bundles/certs/${CA_DER_FILENAME}
+  createCertificateDER ${CA_CERT} ${PIKA_PKI_DIR}/public_bundles/certs/${CA_DER_FILENAME}
 
   # Copy the CRL if it exists
   if [ $(doesCAHaveCRL ${CA_CERT}) == "true" ]; then
@@ -538,9 +551,20 @@ function copyCAPublicBundles {
   fi
   if [ ! -z "${CA_FULL_CHAIN}" ]; then
     if [ "$(echo -e "${CA_FULL_CHAIN}" | tail -n +2)" != "$(cat ${CA_CERT})" ]; then
-      echo -e "${CA_FULL_CHAIN}" > ${CA_DIR}/public_bundles/certs/${CA_CERT_FILENAME}.fullchain.pem
-      echo -e "${CA_FULL_CHAIN}" > ${PIKA_PKI_DIR}/public_bundles/certs/${CA_CERT_FILENAME}.fullchain.pem
+      echo -e "${CA_FULL_CHAIN}" > ${CA_DIR}/public_bundles/certs/${CA_CERT_FILENAME}.full-chain.pem
+      echo -e "${CA_FULL_CHAIN}" > ${PIKA_PKI_DIR}/public_bundles/certs/${CA_CERT_FILENAME}.full-chain.pem
     fi
   fi
 
+}
+
+#==============================================================================
+# createCertificateDER - Create a DER formatted certificate from a PEM formatted certificate
+# $1 - Certificate Path
+# $2 - DER Path
+#==============================================================================
+function createCertificateDER {
+  local CERT_PATH=${1}
+  local DER_PATH=${2}
+  openssl x509 -outform der -in ${CERT_PATH} -out ${DER_PATH}
 }

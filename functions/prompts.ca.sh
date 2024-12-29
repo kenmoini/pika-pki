@@ -1,5 +1,15 @@
 #!/bin/bash
 
+source ${SCRIPT_DIR}/functions/formatting.sh
+
+#======================================================================================================================================
+# Shared CA Prompts
+#======================================================================================================================================
+function promptNewCAURI {
+  local CA_DIST_URI=$(gum input --prompt "[Optional] CA URI Base: " --placeholder "http://acme.com/pki" --value "${PIKA_PKI_DEFAULT_CA_URI_BASE}")
+  echo $(stripLastSlash ${CA_DIST_URI})
+}
+
 #======================================================================================================================================
 # Root CA Prompts
 #======================================================================================================================================
@@ -50,11 +60,7 @@ function promptNewRootCAOrganization {
 
 function promptNewRootCAOrganizationalUnit {
   local ROOT_CA_ORGANIZATIONAL_UNIT=$(gum input --prompt "* Organizational Unit: " --placeholder "InfoSec" --value "${PIKA_PKI_DEFAULT_ORGUNIT}")
-  if [ -z "$ROOT_CA_ORGANIZATIONAL_UNIT" ]; then
-    promptNewRootCAOrganizationalUnit
-  else
-    echo ${ROOT_CA_ORGANIZATIONAL_UNIT}
-  fi
+  echo ${ROOT_CA_ORGANIZATIONAL_UNIT}
 }
 
 function promptNewRootCAEmail {
@@ -66,9 +72,9 @@ function promptNewRootCAEmail {
   fi
 }
 
-function promptNewRootCACRLURL {
-  local ROOT_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI Root: " --placeholder "https://acme.com/pki/crl" --value "${PIKA_PKI_DEFAULT_CRL_URI_BASE}")
-  echo ${ROOT_CA_CRL_DIST_URI}
+function promptNewRootCAURI {
+  local ROOT_CA_CRL_DIST_URI=$(gum input --prompt "[Optional] CA URI Base: " --placeholder "http://acme.com/pki" --value "${PIKA_PKI_DEFAULT_CA_URI_BASE}")
+  echo $(stripLastSlash ${ROOT_CA_CRL_DIST_URI})
 }
 
 #======================================================================================================================================
@@ -121,11 +127,7 @@ function promptNewIntermediateCAOrganization {
 
 function promptNewIntermediateCAOrganizationalUnit {
   local INTERMEDIATE_CA_ORGANIZATIONAL_UNIT=$(gum input --prompt "* Organizational Unit: " --placeholder "InfoSec" --value "${PIKA_PKI_DEFAULT_ORGUNIT}")
-  if [ -z "$INTERMEDIATE_CA_ORGANIZATIONAL_UNIT" ]; then
-    promptNewIntermediateCAOrganizationalUnit
-  else
-    echo ${INTERMEDIATE_CA_ORGANIZATIONAL_UNIT}
-  fi
+  echo ${INTERMEDIATE_CA_ORGANIZATIONAL_UNIT}
 }
 
 function promptNewIntermediateCAEmail {
@@ -137,9 +139,9 @@ function promptNewIntermediateCAEmail {
   fi
 }
 
-function promptNewIntermediateCACRLURL {
-  local INTERMEDIATE_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI Root: " --placeholder "https://acme.com/pki/crl" --value "${PIKA_PKI_DEFAULT_CRL_URI_BASE}")
-  echo ${INTERMEDIATE_CA_CRL_DIST_URI}
+function promptNewIntermediateCAURI {
+  local INTERMEDIATE_CA_CRL_DIST_URI=$(gum input --prompt "[Optional] CA URI Base: " --placeholder "http://acme.com/pki" --value "${PIKA_PKI_DEFAULT_CA_URI_BASE}")
+  echo $(stripLastSlash ${INTERMEDIATE_CA_CRL_DIST_URI})
 }
 
 #======================================================================================================================================
@@ -192,11 +194,7 @@ function promptNewSigningCAOrganization {
 
 function promptNewSigningCAOrganizationalUnit {
   local SIGNING_CA_ORGANIZATIONAL_UNIT=$(gum input --prompt "* Organizational Unit: " --placeholder "InfoSec" --value "${PIKA_PKI_DEFAULT_ORGUNIT}")
-  if [ -z "$SIGNING_CA_ORGANIZATIONAL_UNIT" ]; then
-    promptNewSigningCAOrganizationalUnit
-  else
-    echo ${SIGNING_CA_ORGANIZATIONAL_UNIT}
-  fi
+  echo ${SIGNING_CA_ORGANIZATIONAL_UNIT}
 }
 
 function promptNewSigningCAEmail {
@@ -208,7 +206,7 @@ function promptNewSigningCAEmail {
   fi
 }
 
-function promptNewSigningCACRLURL {
-  local SIGNING_CA_CRL_DIST_URI=$(gum input --prompt " [Optional] CRL URI Root: " --placeholder "https://acme.com/pki/crl" --value "${PIKA_PKI_DEFAULT_CRL_URI_BASE}")
-  echo ${SIGNING_CA_CRL_DIST_URI}
+function promptNewSigningCAURI {
+  local SIGNING_CA_CRL_DIST_URI=$(gum input --prompt "[Optional] CA URI Base: " --placeholder "http://acme.com/pki" --value "${PIKA_PKI_DEFAULT_CA_URI_BASE}")
+  echo $(stripLastSlash ${SIGNING_CA_CRL_DIST_URI})
 }

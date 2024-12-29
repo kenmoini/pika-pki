@@ -16,7 +16,7 @@ function selectIntermediateCAScreen {
   local INT_CA_COMMON_NAME=""
   local INT_CA_GLUE=()
   local INT_CA_GLUE_STR=''
-  local INT_CA_COMMON_NAMES_STR="../ Back\n[+] Create a new Intermediate CA"
+  local INT_CA_COMMON_NAMES_STR="../ Back"
   local INT_CA_COMMON_NAMES=()
 
   while IFS= read -r line; do
@@ -30,6 +30,8 @@ function selectIntermediateCAScreen {
     INT_CA_COMMON_NAMES+=("${INT_CA_COMMON_NAME}")
     INT_CA_COMMON_NAMES_STR+="\n-|- ${INT_CA_COMMON_NAME}"
   done <<< "$INT_CA_DIRS"
+
+  local INT_CA_COMMON_NAMES_STR+="\n[+] Create a new Intermediate CA"
 
   clear
   echoBanner "[${CA_TYPE}] ${CA_CN} - Intermediate CA Selection"
@@ -62,6 +64,9 @@ function selectIntermediateCAScreen {
 function createNewIntermediateCA {
   local PARENT_CA_PATH=${1}
   local PARENT_CA_NAME=$(getCertificateCommonName "${PARENT_CA_PATH}/certs/ca.cert.pem")
+  local PARENT_CA_SLUG=$(slugify "${PARENT_CA_NAME}")
+  local PARENT_CA_URI_BASE=$(getCAURIBase ${PARENT_CA_PATH})
+  local PARENT_CA_TYPE=$(getCAType ${PARENT_CA_PATH} | tr '[:upper:]' '[:lower:]')
 
   local INTERMEDIATE_CA_NAME=$(promptNewIntermediateCAName)
   local INTERMEDIATE_CA_COUNTRY_CODE=$(promptNewIntermediateCACountryCode)
@@ -70,11 +75,23 @@ function createNewIntermediateCA {
   local INTERMEDIATE_CA_ORGANIZATION=$(promptNewIntermediateCAOrganization)
   local INTERMEDIATE_CA_ORGANIZATIONAL_UNIT=$(promptNewIntermediateCAOrganizationalUnit)
   local INTERMEDIATE_CA_EMAIL=$(promptNewIntermediateCAEmail)
-  local INTERMEDIATE_CA_CRL_DIST_URI=$(promptNewIntermediateCACRLURL)
+  local INTERMEDIATE_CA_DIST_URI=$(promptNewCAURI)
+  local INTERMEDIATE_CA_CRL_URI=""
+  local INTERMEDIATE_CA_AIA_URI=""
+
+  # If the Parent/Signing CA has a URI base, then we can use it to generate the CRL URI for this Intermediate CA
+  if [ ! -z "${PARENT_CA_URI_BASE}" ]; then
+    INTERMEDIATE_CA_CRL_URI="${PARENT_CA_URI_BASE}/crls/${PARENT_CA_TYPE}-ca.${PARENT_CA_SLUG}.crl"
+    INTERMEDIATE_CA_AIA_URI="${PARENT_CA_URI_BASE}/certs/${PARENT_CA_TYPE}-ca.${PARENT_CA_SLUG}.${CERT_DER_FILE_EXTENSION}"
+  fi
 
   echo -e "- $(bld '[Common] Name:') ${INTERMEDIATE_CA_NAME}\n- $(bld Country Code:) ${INTERMEDIATE_CA_COUNTRY_CODE}\n- $(bld State:) ${INTERMEDIATE_CA_STATE}\n- $(bld Locality:) ${INTERMEDIATE_CA_LOCALITY}\n- $(bld Organization:) ${INTERMEDIATE_CA_ORGANIZATION}\n- $(bld Organizational Unit:) ${INTERMEDIATE_CA_ORGANIZATIONAL_UNIT}\n- $(bld Email:) ${INTERMEDIATE_CA_EMAIL}"
-  if [ ! -z "${INTERMEDIATE_CA_CRL_DIST_URI}" ]; then
-    echo -e "- $(bld 'CRL Distribution URI:') ${INTERMEDIATE_CA_CRL_DIST_URI}"
+  if [ ! -z "${INTERMEDIATE_CA_DIST_URI}" ]; then
+    echo -e "- $(bld 'CA Distribution URI:') ${INTERMEDIATE_CA_DIST_URI}"
+  fi
+  if [ ! -z "${PARENT_CA_URI_BASE}" ]; then
+    echo -e "- $(bld 'CRL URI (from signing CA):') ${INTERMEDIATE_CA_CRL_URI}"
+    echo -e "- $(bld 'AIA URI (from signing CA):') ${INTERMEDIATE_CA_AIA_URI}"
   fi
 
   echo ""
@@ -95,7 +112,7 @@ function createNewIntermediateCA {
 
     # Create the OpenSSL Configuration file
     echo -e "- Creating default OpenSSL configuration files..."
-    generateOpenSSLConfFile "${INTERMEDIATE_CA_DIR}" "${INTERMEDIATE_CA_NAME}" "${INTERMEDIATE_CA_SLUG}" "intermediate" "${INTERMEDIATE_CA_COUNTRY_CODE}" "${INTERMEDIATE_CA_STATE}" "${INTERMEDIATE_CA_LOCALITY}" "${INTERMEDIATE_CA_ORGANIZATION}" "${INTERMEDIATE_CA_ORGANIZATIONAL_UNIT}" "${INTERMEDIATE_CA_EMAIL}" 3650 "${INTERMEDIATE_CA_CRL_DIST_URI}"
+    generateOpenSSLConfFile "${INTERMEDIATE_CA_DIR}" "${INTERMEDIATE_CA_NAME}" "${INTERMEDIATE_CA_SLUG}" "intermediate" "${INTERMEDIATE_CA_COUNTRY_CODE}" "${INTERMEDIATE_CA_STATE}" "${INTERMEDIATE_CA_LOCALITY}" "${INTERMEDIATE_CA_ORGANIZATION}" "${INTERMEDIATE_CA_ORGANIZATIONAL_UNIT}" "${INTERMEDIATE_CA_EMAIL}" 3650 "${INTERMEDIATE_CA_DIST_URI}" "${PARENT_CA_URI_BASE}" "${PARENT_CA_TYPE}" "${PARENT_CA_SLUG}"
 
     # Prompt for a Intermediate CA Password
     # At this point, you could potentially edit the openssl.cnf file to modify things before the Intermediate CA gets created
@@ -135,7 +152,7 @@ function createNewIntermediateCA {
       rm -f ${PARENT_CA_PASS_FW}
     fi
 
-    if [ ! -z "${INTERMEDIATE_CA_CRL_DIST_URI}" ]; then
+    if [ ! -z "${INTERMEDIATE_CA_DIST_URI}" ]; then
       createCRLFile "${INTERMEDIATE_CA_DIR}" "${INT_CA_PASS_FW}"
     else
       # Copy the Intermediate CA public bundle around

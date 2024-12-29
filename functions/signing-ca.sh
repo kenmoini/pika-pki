@@ -16,7 +16,7 @@ function selectSigningCAScreen {
   local SIGNING_CA_COMMON_NAME=""
   local SIGNING_CA_GLUE=()
   local SIGNING_CA_GLUE_STR=''
-  local SIGNING_CA_COMMON_NAMES_STR="../ Back\n[+] Create a new Signing CA"
+  local SIGNING_CA_COMMON_NAMES_STR="../ Back"
   
   local SIGNING_CA_COMMON_NAMES=()
 
@@ -31,6 +31,8 @@ function selectSigningCAScreen {
     SIGNING_CA_COMMON_NAMES+=("${SIGNING_CA_COMMON_NAME}")
     SIGNING_CA_COMMON_NAMES_STR+="\n-|- ${SIGNING_CA_COMMON_NAME}"
   done <<< "$SIGNING_CA_DIRS"
+
+  SIGNING_CA_COMMON_NAMES_STR+="\n[+] Create a new Signing CA"
 
   clear
   echoBanner "[${CA_TYPE}] ${CA_CN} - Signing CA Selection"
@@ -65,6 +67,9 @@ function createNewSigningCA {
   echo -e "\n- Creating a new Signing CA...\n"
   local PARENT_CA_PATH=${1}
   local PARENT_CA_NAME=$(getCertificateCommonName "${PARENT_CA_PATH}/certs/ca.cert.pem")
+  local PARENT_CA_SLUG=$(slugify "${PARENT_CA_NAME}")
+  local PARENT_CA_URI_BASE=$(getCAURIBase ${PARENT_CA_PATH})
+  local PARENT_CA_TYPE=$(getCAType ${PARENT_CA_PATH} | tr '[:upper:]' '[:lower:]')
 
   local SIGNING_CA_NAME=$(promptNewSigningCAName)
   local SIGNING_CA_COUNTRY_CODE=$(promptNewSigningCACountryCode)
@@ -73,11 +78,23 @@ function createNewSigningCA {
   local SIGNING_CA_ORGANIZATION=$(promptNewSigningCAOrganization)
   local SIGNING_CA_ORGANIZATIONAL_UNIT=$(promptNewSigningCAOrganizationalUnit)
   local SIGNING_CA_EMAIL=$(promptNewSigningCAEmail)
-  local SIGNING_CA_CRL_DIST_URI=$(promptNewSigningCACRLURL)
+  local SIGNING_CA_DIST_URI=$(promptNewCAURI)
+  local SIGNING_CA_CRL_URI=""
+  local SIGNING_CA_AIA_URI=""
+
+  # If the Parent/Signing CA has a URI base, then we can use it to generate the CRL URI for this Intermediate CA
+  if [ ! -z "${PARENT_CA_URI_BASE}" ]; then
+    SIGNING_CA_CRL_URI="${PARENT_CA_URI_BASE}/crls/${PARENT_CA_TYPE}-ca.${PARENT_CA_SLUG}.crl"
+    SIGNING_CA_AIA_URI="${PARENT_CA_URI_BASE}/certs/${PARENT_CA_TYPE}-ca.${PARENT_CA_SLUG}.${CERT_DER_FILE_EXTENSION}"
+  fi
 
   echo -e "- $(bld '[Common] Name:') ${SIGNING_CA_NAME}\n- $(bld Country Code:) ${SIGNING_CA_COUNTRY_CODE}\n- $(bld State:) ${SIGNING_CA_STATE}\n- $(bld Locality:) ${SIGNING_CA_LOCALITY}\n- $(bld Organization:) ${SIGNING_CA_ORGANIZATION}\n- $(bld Organizational Unit:) ${SIGNING_CA_ORGANIZATIONAL_UNIT}\n- $(bld Email:) ${SIGNING_CA_EMAIL}"
-  if [ ! -z "${SIGNING_CA_CRL_DIST_URI}" ]; then
-    echo -e "- $(bld 'CRL Distribution URI:') ${SIGNING_CA_CRL_DIST_URI}"
+  if [ ! -z "${SIGNING_CA_DIST_URI}" ]; then
+    echo -e "- $(bld 'CRL Distribution URI:') ${SIGNING_CA_DIST_URI}"
+  fi
+  if [ ! -z "${PARENT_CA_URI_BASE}" ]; then
+    echo -e "- $(bld 'CRL URI (from signing CA):') ${SIGNING_CA_CRL_URI}"
+    echo -e "- $(bld 'AIA URI (from signing CA):') ${SIGNING_CA_AIA_URI}"
   fi
 
   echo ""
@@ -99,7 +116,7 @@ function createNewSigningCA {
 
     # Create the OpenSSL Configuration file
     echo -e "- Creating default OpenSSL configuration files..."
-    generateOpenSSLConfFile "${SIGNING_CA_DIR}" "${SIGNING_CA_NAME}" "${SIGNING_CA_SLUG}" "signing" "${SIGNING_CA_COUNTRY_CODE}" "${SIGNING_CA_STATE}" "${SIGNING_CA_LOCALITY}" "${SIGNING_CA_ORGANIZATION}" "${SIGNING_CA_ORGANIZATIONAL_UNIT}" "${SIGNING_CA_EMAIL}" 1875 "${SIGNING_CA_CRL_DIST_URI}"
+    generateOpenSSLConfFile "${SIGNING_CA_DIR}" "${SIGNING_CA_NAME}" "${SIGNING_CA_SLUG}" "signing" "${SIGNING_CA_COUNTRY_CODE}" "${SIGNING_CA_STATE}" "${SIGNING_CA_LOCALITY}" "${SIGNING_CA_ORGANIZATION}" "${SIGNING_CA_ORGANIZATIONAL_UNIT}" "${SIGNING_CA_EMAIL}" 1875 "${SIGNING_CA_DIST_URI}" "${PARENT_CA_URI_BASE}" "${PARENT_CA_TYPE}" "${PARENT_CA_SLUG}"
     
     # Prompt for a Root CA Password
     # At this point, you could potentially edit the openssl.cnf file to modify things before the Root CA gets created
@@ -140,7 +157,7 @@ function createNewSigningCA {
       rm -f ${PARENT_CA_PASS_FW}
     fi
 
-    if [ ! -z "${SIGNING_CA_CRL_DIST_URI}" ]; then
+    if [ ! -z "${SIGNING_CA_DIST_URI}" ]; then
       createCRLFile "${SIGNING_CA_DIR}" "${SIGN_CA_PASS_FW}"
     else
       # Copy the Root CA public bundle around

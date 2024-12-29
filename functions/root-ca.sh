@@ -69,23 +69,24 @@ function createNewRootCA {
   echoBanner "Create new Root Certificate Authority (CA)"
 
   local ROOT_CA_NAME=$(promptNewRootCAName)
+  local ROOT_CA_SLUG=$(slugify "${ROOT_CA_NAME}")
   local ROOT_CA_COUNTRY_CODE=$(promptNewRootCACountryCode)
   local ROOT_CA_STATE=$(promptNewRootCAState)
   local ROOT_CA_LOCALITY=$(promptNewRootCALocality)
   local ROOT_CA_ORGANIZATION=$(promptNewRootCAOrganization)
   local ROOT_CA_ORGANIZATIONAL_UNIT=$(promptNewRootCAOrganizationalUnit)
   local ROOT_CA_EMAIL=$(promptNewRootCAEmail)
-  local ROOT_CA_CRL_DIST_URI=$(promptNewRootCACRLURL)
+  local ROOT_CA_DIST_URI=$(promptNewCAURI)
 
   echo -e "- $(bld '[Common] Name:') ${ROOT_CA_NAME}\n- $(bld Country Code:) ${ROOT_CA_COUNTRY_CODE}\n- $(bld State:) ${ROOT_CA_STATE}\n- $(bld Locality:) ${ROOT_CA_LOCALITY}\n- $(bld Organization:) ${ROOT_CA_ORGANIZATION}\n- $(bld Organizational Unit:) ${ROOT_CA_ORGANIZATIONAL_UNIT}\n- $(bld Email:) ${ROOT_CA_EMAIL}"
-  if [ ! -z "${ROOT_CA_CRL_DIST_URI}" ]; then
-    echo -e "- $(bld 'CRL Distribution URI:') ${ROOT_CA_CRL_DIST_URI}"
+  if [ ! -z "${ROOT_CA_DIST_URI}" ]; then
+    echo -e "- $(bld 'CA Distribution URI:') ${ROOT_CA_DIST_URI}"
+    echo -e "- $(bld 'CRL URI:') ${ROOT_CA_DIST_URI}/crls/root-ca.${ROOT_CA_SLUG}.crl"
   fi
 
   echo ""
   
   if gum confirm; then
-    local ROOT_CA_SLUG=$(slugify "${ROOT_CA_NAME}")
     local ROOT_CA_DIR=${PIKA_PKI_DIR}/roots/${ROOT_CA_SLUG}
 
     # Make sure the directory doesn't already exist
@@ -100,7 +101,7 @@ function createNewRootCA {
 
     # Create the OpenSSL Configuration file
     echo -e "- Creating default OpenSSL configuration files..."
-    generateOpenSSLConfFile "${ROOT_CA_DIR}" "${ROOT_CA_NAME}" "${ROOT_CA_SLUG}" "root" "${ROOT_CA_COUNTRY_CODE}" "${ROOT_CA_STATE}" "${ROOT_CA_LOCALITY}" "${ROOT_CA_ORGANIZATION}" "${ROOT_CA_ORGANIZATIONAL_UNIT}" "${ROOT_CA_EMAIL}" 3650 "${ROOT_CA_CRL_DIST_URI}"
+    generateOpenSSLConfFile "${ROOT_CA_DIR}" "${ROOT_CA_NAME}" "${ROOT_CA_SLUG}" "root" "${ROOT_CA_COUNTRY_CODE}" "${ROOT_CA_STATE}" "${ROOT_CA_LOCALITY}" "${ROOT_CA_ORGANIZATION}" "${ROOT_CA_ORGANIZATIONAL_UNIT}" "${ROOT_CA_EMAIL}" 3650 "${ROOT_CA_DIST_URI}"
     
     # Prompt for a Root CA Password
     # At this point, you could potentially edit the openssl.cnf file to modify things before the Root CA gets created
@@ -126,7 +127,7 @@ function createNewRootCA {
     fi
 
     # Create the CRL file if a CRL Distribution URI is provided
-    if [ ! -z "${ROOT_CA_CRL_DIST_URI}" ]; then
+    if [ ! -z "${ROOT_CA_DIST_URI}" ]; then
       createCRLFile "${ROOT_CA_DIR}" "${PW_FILE}"
     else
       # Copy the Root CA public bundle around

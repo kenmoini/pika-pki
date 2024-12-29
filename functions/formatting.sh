@@ -24,9 +24,23 @@ function slugify {
 nclr () { local j; for ((j = 0; j <= "${1:-1}"; j++ )); do tput cuu1; done; tput ed; }
 
 #==============================================================================
-# stripLS - Strip last slash from a path
+# stripLastSlash - Strip last slash(es) from a path
 #==============================================================================
-function stripLS {
+function stripLastSlash {
   #echo "${1%/}"
   echo "${1}" | sed 's|/*$||'
+}
+
+#==============================================================================
+# stripFirstSlash - Strip first slash(es) from a path
+#==============================================================================
+function stripFirstSlash {
+  echo "${1}" | sed 's|^/*||'
+}
+
+#==============================================================================
+# stripLastCommas - Strip last commans from a string
+#==============================================================================
+function stripLastCommas {
+  echo "${1}" | sed 's|,*$||'
 }

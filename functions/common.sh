@@ -24,6 +24,7 @@ function showHelpMenu {
   echo "   -c     Country Code"
   echo "   -e     Email"
   echo "   -f     Certificate Path"
+  echo "   -g     Certificate Type (default: server, options: root, intermediate, signing, server)"
   echo "   -l     Locality"
   echo "   -n     Common Name"
   echo "   -o     Organization"

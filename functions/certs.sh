@@ -98,7 +98,7 @@ function createServerCertificateInputScreen {
     SERVER_DNS_SANS_FRIENDLY="${SERVER_DNS_SANS_FRIENDLY},DNS:${SERVER_DNS_SANS}"
     SERVER_DNS_SANS_FORMATTED="${SERVER_DNS_SANS_FORMATTED},DNS:${SERVER_DNS_SANS}"
     SERVER_COMPILED_SANS="${SERVER_COMPILED_SANS},DNS:${SERVER_DNS_SANS}"
-    local SERVER_DNS_SANS_NL="$(echo ${SERVER_DNS_SANS_FRIENDLY} | sed 's/,/\n/g' | sed 's/DNS:/  - /g')"
+    #local SERVER_DNS_SANS_NL="$(echo ${SERVER_DNS_SANS_FRIENDLY} | sed 's/,/\n/g' | sed 's/DNS:/  - /g')"
   fi
 
   SERVER_COMPILED_SANS_NL="$(echo ${SERVER_COMPILED_SANS} | sed 's/,/\n/g' | sed 's/DNS:/  - /g' | sed 's/IP:/  - /g')"
@@ -129,7 +129,7 @@ function createServerCertificateInputScreen {
       "${SERVER_CERT_ORGANIZATION}" \
       "${SERVER_CERT_ORGANIZATIONAL_UNIT}" \
       "${SERVER_CERT_EMAIL}" \
-      "${SERVER_DNS_SANS_FORMATTED}"
+      "${SERVER_COMPILED_SANS}"
 
     # Clean up the password file
     rm -f ${PW_FILE}

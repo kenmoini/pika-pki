@@ -98,19 +98,13 @@ function createServerCertificateInputScreen {
     SERVER_DNS_SANS_FRIENDLY="${SERVER_DNS_SANS_FRIENDLY},DNS:${SERVER_DNS_SANS}"
     SERVER_DNS_SANS_FORMATTED="${SERVER_DNS_SANS_FORMATTED},DNS:${SERVER_DNS_SANS}"
     SERVER_COMPILED_SANS="${SERVER_COMPILED_SANS},DNS:${SERVER_DNS_SANS}"
-    #local SERVER_DNS_SANS_NL="$(echo ${SERVER_DNS_SANS_FRIENDLY} | sed 's/,/\n/g' | sed 's/DNS:/  - /g')"
   fi
 
   SERVER_COMPILED_SANS_NL="$(echo ${SERVER_COMPILED_SANS} | sed 's/,/\n/g' | sed 's/DNS:/  - /g' | sed 's/IP:/  - /g')"
 
   # Display the certificate information
   echo -e "- $(bld 'Common Name:') ${SERVER_CERT_NAME}\n- $(bld Country Code:) ${SERVER_CERT_COUNTRY_CODE}\n- $(bld State:) ${SERVER_CERT_STATE}\n- $(bld Locality:) ${SERVER_CERT_LOCALITY}\n- $(bld Organization:) ${SERVER_CERT_ORGANIZATION}\n- $(bld Organizational Unit:) ${SERVER_CERT_ORGANIZATIONAL_UNIT}\n- $(bld Email:) ${SERVER_CERT_EMAIL}"
-  #echo -e "- $(bld 'DNS SANs:')\n${SERVER_DNS_SANS_NL}"
   echo -e "- $(bld 'SANs:')\n${SERVER_COMPILED_SANS_NL}"
-  
-  #if [ ! -z "${SERVER_CERT_IP_SAN}" ]; then
-  #  echo -e "- $(bld 'IP SANs:') ${SERVER_IP_SANS_NL}"
-  #fi
 
   if gum confirm; then
     # Prompt for the signing CA's password, save it to a temporary file

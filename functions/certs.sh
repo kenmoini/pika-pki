@@ -85,13 +85,14 @@ function createServerCertificateInputScreen {
   local SERVER_CERT_FILENAME="$(echo "${SERVER_CERT_NAME}" | sed 's/*/wildcard/')"
   local SERVER_CERT_PATH="${PARENT_CA_PATH}/certs/${SERVER_CERT_FILENAME}.cert.pem"
 
-  # Append any additional DNS SANs
+  # Append any additional IP SANs
   if [ ! -z "${SERVER_CERT_IP_SAN}" ]; then
     local SERVER_IP_SANS=$(echo "$(stripLastCommas ${SERVER_CERT_IP_SAN})" | sed 's/,/,IP:/g')
     local SERVER_IP_SANS_NL="$(echo ${SERVER_IP_SANS} | sed 's/,/\n/g' | sed 's/IP:/  - /g')"
     SERVER_COMPILED_SANS="${SERVER_COMPILED_SANS},${SERVER_IP_SANS}"
   fi
 
+  # Append any additional DNS SANs
   if [ ! -z "${SERVER_CERT_DNS_SAN}" ]; then
     local SERVER_DNS_SANS=$(echo ${SERVER_CERT_DNS_SAN} | sed 's/,/,DNS:/g')
     SERVER_DNS_SANS_FRIENDLY="${SERVER_DNS_SANS_FRIENDLY},DNS:${SERVER_DNS_SANS}"

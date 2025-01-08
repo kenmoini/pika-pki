@@ -19,10 +19,13 @@ function batchEntrypoint {
   local PIKA_PKI_BATCH_STATE=""
   local PIKA_PKI_BATCH_ORGANIZATIONAL_UNIT=""
   local PIKA_PKI_BATCH_FILE=""
+  local PIKA_PKI_BATCH_CERTIFICATE_TYPE="server"
 
   # a - authority
   # c - country
   # e - email
+  # f - file
+  # g - certificate type
   # h - help
   # l - locality
   # m - mode
@@ -32,9 +35,8 @@ function batchEntrypoint {
   # s - sans
   # t - state
   # u - organizational unit
-  # f - file
 
-  while getopts "ha:c:e:l:m:n:o:p:s:t:u:f:" OPTION; do
+  while getopts "ha:c:e:f:g:l:m:n:o:p:s:t:u:" OPTION; do
     case $OPTION in
       a)
         # Set the authority
@@ -47,6 +49,10 @@ function batchEntrypoint {
       e)
         # Set the email
         PIKA_PKI_BATCH_EMAIL=${OPTARG}
+        ;;
+      g)
+        # Set the certificate type
+        PIKA_PKI_BATCH_CERTIFICATE_TYPE=${OPTARG}
         ;;
       l)
         # Set the locality

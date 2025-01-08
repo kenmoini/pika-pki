@@ -306,6 +306,16 @@ extendedKeyUsage        = clientAuth
 $(if [ ! -z "${CA_DIST_URI}" ]; then echo "authorityInfoAccess     = caIssuers;URI:${CA_DIST_URI}/certs/${CA_TYPE}-ca.${CA_SLUG}.${CERT_DER_FILE_EXTENSION}"; fi)
 $(if [ ! -z "${CA_DIST_URI}" ]; then echo "crlDistributionPoints   = @crl_dist"; fi)
 
+[ intel_amt_cert ]
+# Extensions for certificates to be used with Intel vPro/AMT.
+# https://software.intel.com/sites/manageability/AMT_Implementation_and_Reference_Guide/default.htm?turl=WordDocuments%2Facquiringanintelvprocertificate.htm
+basicConstraints        = CA:FALSE
+nsComment               = "Pika PKI Generated Intel AMT Certificate"
+subjectKeyIdentifier    = hash
+authorityKeyIdentifier  = keyid,issuer:always
+keyUsage                = digitalSignature, keyEncipherment
+extendedKeyUsage        = clientAuth, serverAuth, 2.16.840.1.113741.1.2.3
+
 [ ocsp ]
 # Extension for OCSP signing certificates ('man ocsp').
 basicConstraints        = CA:FALSE

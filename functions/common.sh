@@ -353,16 +353,32 @@ function createCRLFile {
   copyCAPublicBundles ${CA_DIR}
 }
 
+#==============================================================================
+# getSigningCAType - Get the type of Signing CA
+# $1 - CA Path
+#==============================================================================
+function getSigningCAType {
+  local CA_PATH=${1}
+  if [ -f "${CA_PATH}/.type" ]; then
+    local SIGNING_CA_TYPE=$(cat ${CA_PATH}/.type)
+    echo ${SIGNING_CA_TYPE}
+  else
+    echo "signing"
+  fi
+}
+
 #======================================================================================================================================
 # Menus
 #======================================================================================================================================
 
 #==============================================================================
 # selectCAActions - Select the actions for a given CA
-# $1 - CA Path
+# {1} ACTIVE_CA_PATH: CA Path
+# {2} HEADER_OFF: Whether to display the header or not, defaults to "false"
 #==============================================================================
 function selectCAActions {
   local ACTIVE_CA_PATH=${1}
+  local HEADER_OFF=${2:-"false"}
   local CA_TYPE=$(getCAType ${ACTIVE_CA_PATH})
   local IS_ROOT_CA="false"
   if [ "${ACTIVE_CA_PATH}" == "${ROOT_CA_DIR}" ]; then
@@ -374,18 +390,32 @@ function selectCAActions {
   local CERTIFICATE_COUNT=0
   local CERTIFICATES=$(find ${ACTIVE_CA_PATH}/certs/ -maxdepth 1 -type f -name '*.cert.pem' -printf '%p\n' | grep -ve "^${ACTIVE_CA_PATH}/certs/ca.cert.pem$")
   local CERTIFICATE_COUNT=$(echo -e "${CERTIFICATES}" | sed '/^$/d' | wc -l)
-  local CA_ACTIONS='../ Back\n[+] Certificates ('$CERTIFICATE_COUNT')'
-  
-  clear
-  echoBanner "[${CA_TYPE}] $(getCertificateCommonName ${ACTIVE_CA_PATH}/certs/ca.cert.pem)"
-  echo "===== CA Path: $(getPKIPath ${ACTIVE_CA_PATH})"
+  local CA_ACTIONS='../ Back'
+  local CA_TYPE_HUMAN=""
 
   if [ "$CA_TYPE" != "Signing" ]; then
+    CA_TYPE_HUMAN="${CA_TYPE}"
     local INTERMEDIATE_CA_DIRS=$(find ${ACTIVE_CA_PATH}/intermediate-ca/ -maxdepth 1 -type d -printf '%p\n' | grep -ve "^${ACTIVE_CA_PATH}/intermediate-ca/$")
     local SIGNING_CA_DIRS=$(find ${ACTIVE_CA_PATH}/signing-ca/ -maxdepth 1 -type d -printf '%p\n' | grep -ve "^${ACTIVE_CA_PATH}/signing-ca/$")
     local INTERMEDIATE_CA_COUNT=$(echo -e "${INTERMEDIATE_CA_DIRS}" | sed '/^$/d' | wc -l)
     local SIGNING_CA_COUNT=$(echo -e "${SIGNING_CA_DIRS}" | sed '/^$/d' | wc -l)
-    CA_ACTIONS=${CA_ACTIONS}'\n[+] Intermediate CAs ('$INTERMEDIATE_CA_COUNT')\n[+] Signing CAs ('$SIGNING_CA_COUNT')'
+    CA_ACTIONS=${CA_ACTIONS}'\n[+] Certificates ('$CERTIFICATE_COUNT')\n[+] Intermediate CAs ('$INTERMEDIATE_CA_COUNT')\n[+] Signing CAs ('$SIGNING_CA_COUNT')'
+  else
+    # Read in the Signing CA Type
+    local SIGNING_CA_TYPE=$(getSigningCAType ${ACTIVE_CA_PATH})
+    CA_TYPE_HUMAN="Signing CA"
+    if [ "${SIGNING_CA_TYPE}" == "signing" ]; then
+      CA_ACTIONS=${CA_ACTIONS}'\n[+] Certificates ('$CERTIFICATE_COUNT')'
+    else
+      CA_ACTIONS=${CA_ACTIONS}'\n[+] Save Private Bundle'
+      CA_TYPE_HUMAN="Signing CA, ${SIGNING_CA_TYPE^}"
+    fi
+  fi
+  
+  if [ "${HEADER_OFF}" == "false" ]; then
+    clear
+    echoBanner "[${CA_TYPE_HUMAN}] $(getCertificateCommonName ${ACTIVE_CA_PATH}/certs/ca.cert.pem)"
+    echo "===== CA Path: $(getPKIPath ${ACTIVE_CA_PATH})"
   fi
 
   local SELECTED_ACTION=$(echo -e "${CA_ACTIONS}" | gum choose)
@@ -411,11 +441,54 @@ function selectCAActions {
     "[+] Signing CAs"*)
       selectSigningCAScreen ${ACTIVE_CA_PATH}
       ;;
+    "[+] Save Private Bundle")
+      selectSavePrivateBundleLocation ${ACTIVE_CA_PATH}
+      ;;
     *)
       echo "Invalid selection, exiting"
       exit 1
       ;;
   esac
+}
+
+#==============================================================================
+# selectSavePrivateBundleLocation - Select the location to save the private bundle
+#==============================================================================
+function selectSavePrivateBundleLocation {
+  local ACTIVE_CA_PATH=${1}
+  local CA_CERT_PATH="${ACTIVE_CA_PATH}/certs/ca.cert.pem"
+  local PARENT_CA_CERT_PATH=$(dirname $(dirname ${ACTIVE_CA_PATH}))/certs/ca.cert.pem
+  local CA_CN=$(getCertificateCommonName ${CA_CERT_PATH})
+  local CA_CN_SLUG=$(slugify "${CA_CN}")
+
+  clear
+  echoBanner "[Certificate Authority] ${CA_CN} - Save Private Bundle"
+  echo -e "===== CA Path: $(getPKIPath ${ACTIVE_CA_PATH})\n"
+  echo "Use your keyboard to select a path to save the private bundle."
+  echo -e " Up | Down | Left = Parent Directory | Right = Enter Directory | Enter = Select Directory\n"
+
+  local SAVE_PATH_SELECTION=$(promptSavePath ${PIKA_PKI_DIR})
+
+  local SAVE_PATH=${SAVE_PATH_SELECTION}/${CA_CN_SLUG}
+
+  mkdir -p ${SAVE_PATH}
+
+  # Create basic private bundle files
+  cp ${ACTIVE_CA_PATH}/private/ca.key.pem ${SAVE_PATH}/ca.key.pem
+  cp ${ACTIVE_CA_PATH}/certs/ca.cert.pem ${SAVE_PATH}/ca.cert.pem
+  createCertificateDER ${ACTIVE_CA_PATH}/certs/ca.cert.pem ${SAVE_PATH}/ca.cert.der
+
+  # Generate base chain files
+  generateCAChain ${PARENT_CA_CERT_PATH} > ${SAVE_PATH}/chain.pem
+  generateCAChain ${PARENT_CA_CERT_PATH} "true" > ${SAVE_PATH}/full-chain.pem
+
+  # Concatenate the cert and chain files
+  cat ${CA_CERT_PATH} ${SAVE_PATH}/chain.pem > ${SAVE_PATH}/cert-chain.pem
+  cat ${CA_CERT_PATH} ${SAVE_PATH}/full-chain.pem > ${SAVE_PATH}/cert-full-chain.pem
+
+  tree ${SAVE_PATH}
+
+  selectCAActions ${ACTIVE_CA_PATH} "true"
 }
 
 #==============================================================================
@@ -433,8 +506,6 @@ function selectCertificateScreen {
   CERT_OPTIONS+='\n[+] Create a new Certificate'
 
   clear
-  #echoBanner "[${CA_TYPE}] $(getBannerPath "${CA_PATH}") - Certificate Selection"
-  #echoBanner "[${CA_TYPE}] $(getCertificateCommonName ${ACTIVE_CA_PATH}/certs/ca.cert.pem) - Certificate Selection"
   echoBanner "[${CA_TYPE}] $(getCertificateCommonName ${CA_PATH}/certs/ca.cert.pem) - Certificate Selection"
   echo "===== CA Path: $(getPKIPath ${CA_PATH})"
   

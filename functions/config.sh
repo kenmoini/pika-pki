@@ -222,6 +222,31 @@ nsComment               = "Pika PKI Generated Signing CA Certificate"
 $(if [ ! -z "${CA_DIST_URI}" ]; then echo "authorityInfoAccess     = caIssuers;URI:${CA_DIST_URI}/certs/${CA_TYPE}-ca.${CA_SLUG}.${CERT_DER_FILE_EXTENSION}"; fi)
 $(if [ ! -z "${CA_DIST_URI}" ]; then echo "crlDistributionPoints   = @crl_dist"; fi)
 
+#####################################################################################
+# Squid Proxy CA
+
+[ policy_squid ]
+# Allow the Squid Proxy CAs to sign a more diverse range of certificates.
+# See the POLICY FORMAT section of 'man ca'.
+countryName             = optional
+stateOrProvinceName     = optional
+localityName            = optional
+organizationName        = optional
+organizationalUnitName  = optional
+commonName              = supplied
+emailAddress            = optional
+
+[ v3_squid_ca ]
+# Extensions for a Squid Proxy Signing CA ('man x509v3_config').
+subjectKeyIdentifier    = hash
+authorityKeyIdentifier  = keyid:always,issuer:always
+basicConstraints        = critical, CA:true, pathlen:0
+keyUsage                = critical, digitalSignature, cRLSign, keyCertSign
+extendedKeyUsage        = clientAuth, serverAuth
+nsComment               = "Pika PKI Generated Squid Proxy CA Certificate"
+$(if [ ! -z "${CA_DIST_URI}" ]; then echo "authorityInfoAccess     = caIssuers;URI:${CA_DIST_URI}/certs/${CA_TYPE}-ca.${CA_SLUG}.${CERT_DER_FILE_EXTENSION}"; fi)
+$(if [ ! -z "${CA_DIST_URI}" ]; then echo "crlDistributionPoints   = @crl_dist"; fi)
+
 EOF
   fi
 
@@ -313,7 +338,7 @@ basicConstraints        = CA:FALSE
 nsComment               = "Pika PKI Generated Intel AMT Certificate"
 subjectKeyIdentifier    = hash
 authorityKeyIdentifier  = keyid,issuer:always
-keyUsage                = digitalSignature, keyEncipherment
+keyUsage                = critical, digitalSignature, keyEncipherment
 extendedKeyUsage        = clientAuth, serverAuth, 2.16.840.1.113741.1.2.3
 
 [ ocsp ]

@@ -53,7 +53,8 @@ function selectSigningCAScreen {
       selectCAActions ${CA_PATH}
       ;;
     "[+] Create a new Signing CA")
-      createNewSigningCA ${CA_PATH}
+      #createNewSigningCA ${CA_PATH}
+      selectNewSigningCAType ${CA_PATH}
       ;;
     (*)
       selectCAActions ${SIGNING_CA_DIR}
@@ -61,15 +62,75 @@ function selectSigningCAScreen {
   esac
 }
 
+function selectNewSigningCAType {
+  local PARENT_CA_PATH=${1}
+
+  clear
+  echoBanner "[${CA_TYPE}] ${CA_CN} - Create Signing CA - Type Selection"
+  echo "===== CA Path: $(getPKIPath ${PARENT_CA_PATH})"
+
+  SIGNING_CA_TYPES="../ Back\n[+] Standard Signing CA\n[+] Squid Proxy Signing CA\n[+] StepCA Signing CA\n[+] LDAP Signing CA"
+
+  local SIGNING_CA_TYPE_CHOICE=$(echo -e "${SIGNING_CA_TYPES}" | gum choose)
+  if [ -z "$SIGNING_CA_TYPE_CHOICE" ]; then
+    echo "No Signing CA type selected.  Exiting..."
+    exit 1
+  fi
+
+  case "${SIGNING_CA_TYPE_CHOICE}" in
+    ("../ Back")
+      selectCAActions ${PARENT_CA_PATH}
+      ;;
+    "[+] Standard Signing CA")
+      createNewSigningCA ${PARENT_CA_PATH} "signing"
+      ;;
+    "[+] Squid Proxy Signing CA")
+      createNewSigningCA ${PARENT_CA_PATH} "squid"
+      ;;
+    "[+] StepCA Signing CA")
+      createNewSigningCA ${PARENT_CA_PATH} "stepca"
+      ;;
+    "[+] LDAP Signing CA")
+      createNewSigningCA ${PARENT_CA_PATH} "ldap"
+      ;;
+    (*)
+      selectCAActions ${PARENT_CA_PATH}
+      ;;
+  esac
+}
+
 # Create a new Signing CA
 # $1 - Parent CA Path
 function createNewSigningCA {
-  echo -e "\n- Creating a new Signing CA...\n"
   local PARENT_CA_PATH=${1}
   local PARENT_CA_NAME=$(getCertificateCommonName "${PARENT_CA_PATH}/certs/ca.cert.pem")
   local PARENT_CA_SLUG=$(slugify "${PARENT_CA_NAME}")
   local PARENT_CA_URI_BASE=$(getCAURIBase ${PARENT_CA_PATH})
   local PARENT_CA_TYPE=$(getCAType ${PARENT_CA_PATH} | tr '[:upper:]' '[:lower:]')
+
+  local SIGNING_CA_TYPE="${2}"
+  local SIGNING_CA_EXT_TYPE="signing"
+  local SIGNING_CA_TYPE_HUMAN_NAME="Standard"
+
+  # Set the Signing CA Type
+  if [ ! -z "${SIGNING_CA_TYPE}" ]; then
+    local SIGNING_CA_EXT_TYPE="${SIGNING_CA_TYPE}"
+    case "${SIGNING_CA_TYPE}" in
+      ("squid")
+        local SIGNING_CA_TYPE_HUMAN_NAME="Squid Proxy"
+        ;;
+      ("stepca")
+        local SIGNING_CA_TYPE_HUMAN_NAME="StepCA"
+        ;;
+      ("ldap")
+        local SIGNING_CA_TYPE_HUMAN_NAME="LDAP"
+        ;;
+    esac
+  fi
+
+  clear
+  echoBanner "[${CA_TYPE}] ${CA_CN} - Create ${SIGNING_CA_TYPE_HUMAN_NAME} Signing CA"
+  echo "===== CA Path: $(getPKIPath ${PARENT_CA_PATH})"
 
   local SIGNING_CA_NAME=$(promptNewSigningCAName)
   local SIGNING_CA_COUNTRY_CODE=$(promptNewSigningCACountryCode)
@@ -114,6 +175,9 @@ function createNewSigningCA {
     # Create things such as paths, index files, etc.
     createCommonCAAssets "${SIGNING_CA_DIR}" "Signing"
 
+    # Create a type definition file
+    echo "${SIGNING_CA_EXT_TYPE}" > ${SIGNING_CA_DIR}/.type
+
     # Create the OpenSSL Configuration file
     echo -e "- Creating default OpenSSL configuration files..."
     generateOpenSSLConfFile "${SIGNING_CA_DIR}" "${SIGNING_CA_NAME}" "${SIGNING_CA_SLUG}" "signing" "${SIGNING_CA_COUNTRY_CODE}" "${SIGNING_CA_STATE}" "${SIGNING_CA_LOCALITY}" "${SIGNING_CA_ORGANIZATION}" "${SIGNING_CA_ORGANIZATIONAL_UNIT}" "${SIGNING_CA_EMAIL}" 1875 "${SIGNING_CA_DIST_URI}" "${PARENT_CA_URI_BASE}" "${PARENT_CA_TYPE}" "${PARENT_CA_SLUG}"
@@ -148,7 +212,7 @@ function createNewSigningCA {
       PARENT_CA_PASS_FW=$(mktemp)
       echo ${PARENT_CA_PASS} > ${PARENT_CA_PASS_FW}
 
-      openssl ca -config ${PARENT_CA_PATH}/openssl.cnf -extensions v3_signing_ca \
+      openssl ca -config ${PARENT_CA_PATH}/openssl.cnf -extensions v3_${SIGNING_CA_EXT_TYPE}_ca \
         -passin file:${PARENT_CA_PASS_FW} \
         -days 1875 -notext -md sha256 -batch \
         -in ${SIGNING_CA_DIR}/csr/ca.csr.pem \

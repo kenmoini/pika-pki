@@ -10,6 +10,19 @@ function promptNewCAURI {
   echo $(stripLastSlash ${CA_DIST_URI})
 }
 
+function promptPasswordWithConfirmation {
+  local PROMPT_TEXT="${1}"
+
+  local PASSWORD=$(gum password --prompt ${PROMPT_TEXT})
+  local PASSWORD_CONFIRM=$(gum password --prompt "Confirm - ${PROMPT_TEXT}")
+
+  if [ "${PASSWORD}" != "${PASSWORD_CONFIRM}" ]; then
+    promptPasswordWithConfirmation "${PROMPT_TEXT}"
+  else
+    echo ${PASSWORD}
+  fi
+}
+
 #======================================================================================================================================
 # Root CA Prompts
 #======================================================================================================================================

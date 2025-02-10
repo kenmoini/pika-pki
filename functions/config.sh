@@ -177,7 +177,7 @@ localityName            = supplied
 organizationName        = supplied
 organizationalUnitName  = optional
 commonName              = supplied
-emailAddress            = supplied
+emailAddress            = optional
 
 [ v3_intermediate_ca ]
 # Extensions for an Intermediate CA ('man x509v3_config').

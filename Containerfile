@@ -1,6 +1,6 @@
 FROM docker.io/fedora:latest
 
-USER 1001
+USER 1000
 COPY . /app
 USER 0
 
@@ -10,7 +10,7 @@ RUN cp /app/charm.repo /etc/yum.repos.d/charm.repo \
  && dnf clean all \
  && rm -rf /var/cache/yum /app/assets /app/charm.repo
 
-USER 1001
+USER 1000
 
 WORKDIR /data
 ENV TERM=xterm-256color

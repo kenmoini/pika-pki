@@ -30,6 +30,12 @@ source ${SCRIPT_DIR}/functions/batch.sh
 #==============================================================================
 # Set Environment Variables and defaults
 #==============================================================================
+export PIKA_PKI_TRACE=${PIKA_PKI_TRACE:="false"}
+if [ "$PIKA_PKI_TRACE" != "false" ]; then
+  set -x
+fi
+
+export PIKA_PKI_DEBUG=${PIKA_PKI_DEBUG:="false"}
 export PIKA_PKI_DEFAULT_ORG=${PIKA_PKI_DEFAULT_ORG:=""}
 export PIKA_PKI_DEFAULT_ORGUNIT=${PIKA_PKI_DEFAULT_ORGUNIT:=""}
 export PIKA_PKI_DEFAULT_COUNTRY=${PIKA_PKI_DEFAULT_COUNTRY:=""}
@@ -39,7 +45,6 @@ export PIKA_PKI_DEFAULT_EMAIL=${PIKA_PKI_DEFAULT_EMAIL:=""}
 export PIKA_PKI_CERT_KEY_ENCRYPTION=${PIKA_PKI_CERT_KEY_ENCRYPTION:="false"}
 export PIKA_PKI_DEFAULT_CA_URI_BASE=${PIKA_PKI_DEFAULT_CA_URI_BASE:=""}
 PIKA_PKI_DEFAULT_CA_URI_BASE=$(stripLastSlash ${PIKA_PKI_DEFAULT_CA_URI_BASE})
-
 
 export PIKA_PKI_DIR=${PIKA_PKI_DIR:="$(pwd)/.pika-pki"}
 

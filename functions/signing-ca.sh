@@ -34,7 +34,7 @@ function selectSigningCAScreen {
 
   SIGNING_CA_COMMON_NAMES_STR+="\n[+] Create a new Signing CA"
 
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[${CA_TYPE}] ${CA_CN} - Signing CA Selection"
   echo "===== CA Path: $(getPKIPath ${CA_PATH})"
 
@@ -65,7 +65,7 @@ function selectSigningCAScreen {
 function selectNewSigningCAType {
   local PARENT_CA_PATH=${1}
 
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[${CA_TYPE}] ${CA_CN} - Create Signing CA - Type Selection"
   echo "===== CA Path: $(getPKIPath ${PARENT_CA_PATH})"
 
@@ -128,7 +128,7 @@ function createNewSigningCA {
     esac
   fi
 
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[${CA_TYPE}] ${CA_CN} - Create ${SIGNING_CA_TYPE_HUMAN_NAME} Signing CA"
   echo "===== CA Path: $(getPKIPath ${PARENT_CA_PATH})"
 

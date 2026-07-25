@@ -413,7 +413,7 @@ function selectCAActions {
   fi
   
   if [ "${HEADER_OFF}" == "false" ]; then
-    clear
+    if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
     echoBanner "[${CA_TYPE_HUMAN}] $(getCertificateCommonName ${ACTIVE_CA_PATH}/certs/ca.cert.pem)"
     echo "===== CA Path: $(getPKIPath ${ACTIVE_CA_PATH})"
   fi
@@ -461,7 +461,7 @@ function selectSavePrivateBundleLocation {
   local CA_CN=$(getCertificateCommonName ${CA_CERT_PATH})
   local CA_CN_SLUG=$(slugify "${CA_CN}")
 
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[Certificate Authority] ${CA_CN} - Save Private Bundle"
   echo -e "===== CA Path: $(getPKIPath ${ACTIVE_CA_PATH})\n"
   echo "Use your keyboard to select a path to save the private bundle."
@@ -505,7 +505,7 @@ function selectCertificateScreen {
   fi
   CERT_OPTIONS+='\n[+] Create a new Certificate'
 
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[${CA_TYPE}] $(getCertificateCommonName ${CA_PATH}/certs/ca.cert.pem) - Certificate Selection"
   echo "===== CA Path: $(getPKIPath ${CA_PATH})"
   
@@ -523,7 +523,7 @@ function selectCertificateScreen {
       createNewCertificateTypeScreen ${CA_PATH}
       ;;
     *)
-      clear
+      if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
       viewCertificate "${CA_PATH}/certs/${SELECTED_ACTION}.cert.pem"
       ;;
   esac

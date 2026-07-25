@@ -33,7 +33,7 @@ function selectIntermediateCAScreen {
 
   local INT_CA_COMMON_NAMES_STR+="\n[+] Create a new Intermediate CA"
 
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[${CA_TYPE}] ${CA_CN} - Intermediate CA Selection"
   echo "===== CA Path: $(getPKIPath ${CA_PATH})"
 

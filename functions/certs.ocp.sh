@@ -20,7 +20,7 @@ function createOpenshiftAPICertificateInputScreen {
   local PARENT_CA_TYPE=$(getCAType ${PARENT_CA_PATH})
 
   # Header
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[${PARENT_CA_TYPE}] ${PARENT_CA_NAME} - OpenShift API Certificate Creation"
   echo "===== CA Path: $(getPKIPath ${PARENT_CA_PATH})"
 
@@ -130,7 +130,7 @@ function createOpenshiftIngressCertificateInputScreen {
   local PARENT_CA_TYPE=$(getCAType ${PARENT_CA_PATH})
 
   # Header
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[${PARENT_CA_TYPE}] ${PARENT_CA_NAME} - OpenShift Ingress Certificate Creation"
   echo "===== CA Path: $(getPKIPath ${PARENT_CA_PATH})"
 
@@ -239,7 +239,7 @@ function createOpenshiftComboCertificateInputScreen {
   local PARENT_CA_TYPE=$(getCAType ${PARENT_CA_PATH})
 
   # Header
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[${PARENT_CA_TYPE}] ${PARENT_CA_NAME} - OpenShift Combo Certificate Creation"
   echo "===== CA Path: $(getPKIPath ${PARENT_CA_PATH})"
 

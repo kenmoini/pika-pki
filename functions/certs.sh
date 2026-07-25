@@ -16,7 +16,7 @@ function createNewCertificateTypeScreen {
   local CA_CN=$(getCertificateCommonName "${CA_PATH}/certs/ca.cert.pem")
   local CA_TYPE=$(getCAType ${CA_PATH})
 
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[${CA_TYPE}] ${CA_CN} - Certificate Creation, Type Selection"
   echo "===== CA Path: $(getPKIPath ${CA_PATH})"
 
@@ -61,7 +61,7 @@ function createServerCertificateInputScreen {
   local PARENT_CA_TYPE=$(getCAType ${PARENT_CA_PATH})
 
   # Header
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[${PARENT_CA_TYPE}] ${PARENT_CA_NAME} - Server Certificate Creation"
   echo "===== CA Path: $(getPKIPath ${PARENT_CA_PATH})"
 
@@ -222,7 +222,7 @@ function selectCertificateActions {
   local CERT_CA_CERT_PATH="${CERT_CA_PATH}/certs/ca.cert.pem"
 
   if [ "${HEADER_OFF}" == "false" ]; then
-    clear
+    if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
     echoBanner "[Certificate] ${CERT_CN} - Certificate Actions"
     echo "===== CA Path: $(getPKIPath ${CERT_CA_PATH})"
   fi
@@ -283,7 +283,7 @@ function viewCertificate {
   local CERT_CN=$(getCertificateCommonName ${CERT_PATH})
   local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
 
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[Certificate] ${CERT_FILENAME} - View Certificate"
   echo "===== CA Path: $(getPKIPath ${CERT_CA_PATH})"
 
@@ -319,7 +319,7 @@ function deleteCertificate {
   local CERT_SERIAL_CERT_PATH=$(echo ${CERT_PATH} | sed 's|.cert.pem|.pem|g' | sed 's|/certs/|/newcerts/|g')
   local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
 
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[Certificate] ${CERT_CN} - Delete Certificate"
   echo "===== CA Path: $(getPKIPath ${CERT_CA_PATH})"
 
@@ -346,7 +346,7 @@ function revokeCertificateConfirmation {
   local CERT_CN=$(getCertificateCommonName ${CERT_PATH})
   local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
 
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[Certificate] ${CERT_CN} - Revoke Certificate"
   echo "===== CA Path: $(getPKIPath ${CERT_CA_PATH})"
 
@@ -407,7 +407,7 @@ function saveCertificateActions {
   local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
 
   if [ "${HEADER_OFF}" == "false" ]; then
-    clear
+    if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
     echoBanner "[Certificate] ${CERT_CN} - Save Certificate Type"
     echo "===== CA Path: $(getPKIPath ${CERT_CA_PATH})"
   fi
@@ -451,7 +451,7 @@ function saveCertificateFiles {
   local CERT_KEY_PATH=$(echo ${CERT_PATH} | sed 's|.cert.pem|.key.pem|g' | sed 's|certs/|private/|g')
   local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
 
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[Certificate] ${CERT_CN} - Save Certificate Bundle"
   echo -e "===== CA Path: $(getPKIPath ${CERT_CA_PATH})\n"
   echo "Use your keyboard to select a path to save the certificate bundle."
@@ -514,7 +514,7 @@ function rotateCertificateConfirmation {
   local CERT_CN=$(getCertificateCommonName ${CERT_PATH})
   local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
 
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[Certificate] ${CERT_CN} - Rotate Certificate"
   echo "===== CA Path: $(getPKIPath ${CERT_CA_PATH})"
 
@@ -605,7 +605,7 @@ function recreateCertificateConfirmation {
   local CERT_CN=$(getCertificateCommonName ${CERT_PATH})
   local CERT_CA_PATH=$(dirname $(dirname ${CERT_PATH}))
 
-  clear
+  if [ "$PIKA_PKI_DEBUG" = "false" ]; then clear; fi
   echoBanner "[Certificate] ${CERT_CN} - Recreate Certificate"
   echo "===== CA Path: $(getPKIPath ${CERT_CA_PATH})"
 
